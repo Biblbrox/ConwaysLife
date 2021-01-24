@@ -1,0 +1,19 @@
+#version 330 core
+
+layout (std140) uniform Matrices
+{
+    mat4 ProjectionMatrix;
+    mat4 ViewMatrix;
+    mat4 ModelMatrix;
+};
+
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec2 inTexCoords;
+
+out vec2 TextureCoords;
+
+void main()
+{
+    TextureCoords = inTexCoords;
+    gl_Position = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(position, 1.0);
+}
