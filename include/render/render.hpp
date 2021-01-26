@@ -19,8 +19,8 @@ namespace render
      * @param angle
      * @param scale_factor
      */
-    void drawTexture(ShaderProgram& program, const Texture &texture, GLfloat x, GLfloat y,
-                    GLfloat angle, GLfloat scale_factor);
+    void drawTexture(ShaderProgram& program, const Texture &texture,
+                     const glm::vec3& pos, GLfloat angle);
     
     void drawLinen(const std::vector<vec2>& points, bool adjacency = false);
 

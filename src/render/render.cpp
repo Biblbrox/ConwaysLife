@@ -5,6 +5,7 @@ using glm::vec2;
 using glm::mat4;
 using glm::vec3;
 using utils::math::rotate_around;
+using utils::math::operator/;
 
 void render::drawLinen(const std::vector<vec2>& points, bool adjacency)
 {
@@ -60,33 +61,34 @@ void render::drawDots(const std::vector<vec2>& dots)
 
 void
 render::drawTexture(ShaderProgram& program, const Texture &texture,
-                   GLfloat x, GLfloat y, GLfloat angle, GLfloat scale_factor)
+                   const glm::vec3& pos, GLfloat angle)
 {
     assert(texture.getVAO() != 0);
 
-    const GLfloat half = 0.5f;
-    const GLfloat centerX = x + half;
-    const GLfloat centerY = y + half;
-    const GLfloat invScale = 1.f / scale_factor;
+    const GLfloat half = texture.getWidth() / 2.f; // TODO: fix size
+    const GLfloat centerX = pos.x + half;
+    const GLfloat centerY = pos.y + half;
+    const GLfloat centerZ = pos.z + half;
 
-    mat4 rotation = rotate_around(mat4(1.f), vec3(centerX, centerY, 0.f), angle);
-    mat4 translation = translate(mat4(1.f), vec3(x, y, 0.f));
-    mat4 scaling = scale(mat4(1.f), vec3(scale_factor, scale_factor, 1.f));
+    const glm::vec3 scale = glm::vec3(texture.getWidth(), texture.getHeight(),
+                                    texture.getDepth());
+
+    mat4 rotation = rotate_around(mat4(1.f), vec3(centerX, centerY, centerZ), angle);
+    mat4 translation = translate(mat4(1.f), vec3(pos.x, pos.y, pos.z));
+    mat4 scaling = glm::scale(mat4(1.f), scale);
     program.leftMultModel(scaling * rotation * translation);
     program.updateModel();
 
     glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
     glBindVertexArray(texture.getVAO());
     //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDrawArrays(GL_TRIANGLES, 0, 180);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 
-    translation[3] = glm::vec4(-x,  -y, 0.f, 1);
-    rotation = rotate_around(mat4(1.f), vec3(centerX, centerY, 0.f), -angle);
-    scaling[0][0] = invScale;
-    scaling[1][1] = invScale;
-    scaling[2][2] = invScale;
+    translation[3] = glm::vec4(-pos.x,  -pos.y, -pos.z, 1);
+    rotation = rotate_around(mat4(1.f), vec3(centerX, centerY, centerZ), -angle);
+    scaling = glm::scale(mat4(1.f), 1 / scale);
     program.leftMultModel(translation * rotation * scaling);
     program.updateModel();
 }

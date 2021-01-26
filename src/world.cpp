@@ -6,6 +6,7 @@
 #include "base.hpp"
 #include "world.hpp"
 #include "components/positioncomponent.hpp"
+#include "components/cellcomponent.hpp"
 #include "components/spritecomponent.hpp"
 #include "components/velocitycomponent.hpp"
 #include "components/levelcomponent.hpp"
@@ -37,22 +38,18 @@ using std::find_if;
 using glm::pi;
 using utils::fix_coords;
 
-
 const char* const msgFont = "kenvector_future2.ttf";
 const SDL_Color fontColor = {0xFF, 0xFF, 0xFF, 0xFF};
 
-void World::update_level()
-{
-
-}
+const GLfloat cubeSize = 20.f;
 
 void World::update_text()
 {
-    if constexpr (debug) {
-        auto fpsEntity = m_entities["fpsText"];
-        auto textFps = fpsEntity->getComponent<TextComponent>();
-        textFps->texture->setText((format("FPS: %+3d") % m_fps.get_fps()).str());
-    }
+//    if constexpr (debug) {
+//        auto fpsEntity = m_entities["fpsText"];
+//        auto textFps = fpsEntity->getComponent<TextComponent>();
+//        textFps->texture->setText((format("FPS: %+3d") % m_fps.get_fps()).str());
+//    }
 }
 
 void World::update(size_t delta)
@@ -60,15 +57,13 @@ void World::update(size_t delta)
     if constexpr (debug)
         m_fps.update();
 
-    if (getGameState() == GameStates::WIN
-        && getPrevGameState() != GameStates::WIN) {
-        m_systems[type_id<MovementSystem>()]->stop();
-        m_entities["ship"]->removeComponent<KeyboardComponent>();
-    }
-
     update_text();
-    update_level();
-    update_sprites();
+    GLfloat stepTime = 1.f;
+    if (m_timer.getTicks() / 1000.f > stepTime) {
+        m_timer.stop();
+        m_timer.start();
+        update_field();
+    }
 
     filter_entities();
     for (auto &system: m_systems)
@@ -92,10 +87,9 @@ void World::init()
         createSystem<ParticleRenderSystem>();
 
         // Order of initialization is matter
-        init_level();
-        init_sprites();
         init_text();
         init_sound();
+        init_field();
 
         m_wasInit = true;
     } else {
@@ -113,82 +107,130 @@ void World::init_sound()
 
 }
 
-void World::init_sprites()
+void World::update_field()
 {
-    const int SHIP_WIDTH = 20;
-    const int SHIP_HEIGHT = 21;
+    std::array<std::array<std::array<bool, mapSize>, mapSize>, mapSize> new_state;
+    for (size_t i = 0; i < mapSize; ++i) {
+        for (size_t j = 0; j < mapSize; ++j) {
+            for (size_t k = 0; k < mapSize; ++k) {
+                auto cell = m_cells[i][j][k];
+                auto cellComp = cell->getComponent<CellComponent>();
+                size_t neirCount = 0;
+                bool hasUp =
+                        (j != mapSize - 1) ?
+                        m_cells[i][j + 1][k]->getComponent<CellComponent>()->alive : false;
+                if (hasUp)
+                    ++neirCount;
+                bool hasDown =
+                        (j != 0) ?
+                        m_cells[i][j - 1][k]->getComponent<CellComponent>()->alive : false;
+                if (hasDown)
+                    ++neirCount;
+                bool hasLeft =
+                        (i != 0) ?
+                        m_cells[i - 1][j][k]->getComponent<CellComponent>()->alive : false;
+                if (hasLeft)
+                    ++neirCount;
+                bool hasRight =
+                        (i != mapSize - 1) ?
+                        m_cells[i + 1][j][k]->getComponent<CellComponent>()->alive : false;
+                if (hasRight)
+                    ++neirCount;
+                bool hasForward =
+                        (k != mapSize - 1) ?
+                        m_cells[i][j][k + 1]->getComponent<CellComponent>()->alive : false;
+                if (hasForward)
+                    ++neirCount;
+                bool hasBack =
+                        (k != 0) ?
+                        m_cells[i][j][k - 1]->getComponent<CellComponent>()->alive : false;
+                if (hasBack)
+                    ++neirCount;
+                bool hasUpCor1 =
+                        (i != 0 && k != 0 && j != mapSize - 1) ?
+                        m_cells[i - 1][j + 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                if (hasUpCor1)
+                    ++neirCount;
+                bool hasUpCor2 =
+                        (i != mapSize - 1 && k != 0 && j != mapSize - 1) ?
+                        m_cells[i + 1][j + 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                if (hasUpCor2)
+                    ++neirCount;
+                bool hasUpCor3 =
+                        (i != mapSize - 1 && k != mapSize - 1 && j != mapSize - 1) ?
+                        m_cells[i + 1][j + 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                if (hasUpCor3)
+                    ++neirCount;
+                bool hasUpCor4 =
+                        (i != 0 && k != mapSize - 1 && j != mapSize - 1) ?
+                        m_cells[i - 1][j + 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                if (hasUpCor4)
+                    ++neirCount;
+                bool hasDownCor1 =
+                        (i != 0 && k != 0 && j != 0) ?
+                        m_cells[i - 1][j - 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                if (hasDownCor1)
+                    ++neirCount;
+                bool hasDownCor2 =
+                        (i != mapSize - 1 && k != 0 && j != 0) ?
+                        m_cells[i + 1][j - 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                if (hasDownCor2)
+                    ++neirCount;
+                bool hasDownCor3 =
+                        (i != mapSize - 1 && k != mapSize - 1 && j != 0) ?
+                        m_cells[i + 1][j - 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                if (hasDownCor3)
+                    ++neirCount;
+                bool hasDownCor4 =
+                        (i != 0 && k != mapSize - 1 && j != 0) ?
+                        m_cells[i - 1][j - 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                if (hasDownCor4)
+                    ++neirCount;
 
-    using namespace utils::physics;
-    // Ship entity
-    Entity &ship = createEntity("ship");
-    ship.addComponents<PositionComponent, SpriteComponent, LifeTimeComponent>();
-    ship.activate();
+                if (!cellComp->alive) {
+                    if (neirCount == 9)
+                        new_state[i][j][k] = true;
 
-    auto shipSprite = ship.getComponent<SpriteComponent>();
-    shipSprite->sprite = make_shared<Sprite>(
-            utils::getResourcePath("lunar_lander_bw.png"));
-    shipSprite->sprite->addClipSprite({0, 32, SHIP_WIDTH, SHIP_HEIGHT});
-    shipSprite->sprite->addClipSprite({20, 32, SHIP_WIDTH, SHIP_HEIGHT});
-    shipSprite->sprite->addClipSprite({40, 32, SHIP_WIDTH, SHIP_HEIGHT});
-    shipSprite->sprite->generateDataBuffer();
+                    continue;
+                }
+                // Life case
+                if (neirCount == 0 || neirCount == 1)
+                    new_state[i][j][k] = false;
 
-    auto shipPos = ship.getComponent<PositionComponent>();
-    shipPos->x = 0.f;
-    shipPos->y = 0.f;
-    shipPos->angle = glm::pi<GLfloat>();
+                if (neirCount >= 4)
+                    new_state[i][j][k] = false;
+            }
+        }
+    }
 
-    auto fuel = ship.getComponent<LifeTimeComponent>();
-    fuel->time = 1500;
-
-//    auto shipVel = ship.getComponent<VelocityComponent>();
-//    shipVel->x = 2.f;
-//    auto shipAnim = ship.getComponent<AnimationComponent>();
-//
-//    auto keyboardComponent = ship.getComponent<KeyboardComponent>();
-//    keyboardComponent->event_handler = [shipVel, shipPos, shipAnim, fuel, this]
-//            (const Uint8 *state) {
-//        if (state[SDL_SCANCODE_UP] && fuel->time > 0) {
-//            shipVel->y += -engine_force / weight *
-//                          sin(shipPos->angle + half_pi<GLfloat>());
-//            shipVel->x += -engine_force / weight *
-//                          cos(shipPos->angle + half_pi<GLfloat>());
-//            shipAnim->cur_state = (SDL_GetTicks() / 100) % 2 + 1;
-//            fuel->time -= 1;
-//        } else {
-//            shipAnim->cur_state = 0;
-//        }
-//
-//        if (state[SDL_SCANCODE_LEFT])
-//            shipVel->angle -= rot_step;
-//
-//        if (state[SDL_SCANCODE_RIGHT])
-//            shipVel->angle += rot_step;
-//    };
+    for (size_t i = 0; i < mapSize; ++i) {
+        for (size_t j = 0; j < mapSize; ++j) {
+            for (size_t k = 0; k < mapSize; ++k) {
+                m_cells[i][j][k]->getComponent<CellComponent>()->alive
+                        = new_state[i][j][k];
+            }
+        }
+    }
 }
 
 void World::init_text()
 {
-    if constexpr (debug) {
-        // Fps entity
-        Entity &fpsText = createEntity("fpsText");
-        fpsText.addComponents<TextComponent, PositionComponent>();
-        fpsText.activate();
-
-        auto fspTexture = fpsText.getComponent<TextComponent>();
-        TTF_Font *font = open_font(msgFont, 14);
-        fspTexture->texture = make_shared<TextTexture>("FPS: 000", font,
-                                                       fontColor);
-
-        auto fpsPos = fpsText.getComponent<PositionComponent>();
-        fpsPos->x = m_screenWidth - m_screenWidth / 4.2f;
-        fpsPos->y = m_screenHeight / 15.f;
-        fpsPos->scallable = false;
-    }
-}
-
-void World::init_level()
-{
-
+//    if constexpr (debug) {
+//        // Fps entity
+//        Entity &fpsText = createEntity("fpsText");
+//        fpsText.addComponents<TextComponent, PositionComponent>();
+//        fpsText.activate();
+//
+//        auto fspTexture = fpsText.getComponent<TextComponent>();
+//        TTF_Font *font = open_font(msgFont, 14);
+//        fspTexture->texture = make_shared<TextTexture>("FPS: 000", font,
+//                                                       fontColor);
+//
+//        auto fpsPos = fpsText.getComponent<PositionComponent>();
+//        fpsPos->x = m_screenWidth - m_screenWidth / 4.2f;
+//        fpsPos->y = m_screenHeight / 15.f;
+//        fpsPos->scallable = false;
+//    }
 }
 
 void World::filter_entities()
@@ -208,27 +250,42 @@ TTF_Font* World::open_font(const std::string& fontName, size_t fontSize)
     return font;
 }
 
-void World::update_sprites()
+void World::init_field()
 {
-    using utils::physics::altitude;
-    using utils::Position;
+    const std::vector<std::array<size_t, 3>> initial_cells = {
+            {1, 3, 3}, {2, 3, 3}, {3, 3, 3}
+    };
 
-    auto ship = m_entities["ship"];
-//    auto shipPos = ship->getComponent<PositionComponent>();
-//    auto shipVel = ship->getComponent<VelocityComponent>();
+    for (size_t i = 0; i < mapSize; ++i) {
+        for (size_t j = 0; j < mapSize; ++j) {
+            for (size_t k = 0; k < mapSize; ++k) {
+                auto cell = createEntity("cell" + std::to_string(i)
+                                         + std::to_string(j)
+                                         + std::to_string(k));
+                cell->activate();
+                cell->addComponents<SpriteComponent, CellComponent, PositionComponent>();
 
-    auto renderSystem = std::dynamic_pointer_cast<RendererSystem>(
-            m_systems[type_id<RendererSystem>()]
-    );
+                auto pos = cell->getComponent<PositionComponent>();
+                pos->x = 2.f * i;
+                pos->y = 2.f * j;
+                pos->z = 2.f * k;
 
-//    if ((shipPos->x >= m_frameWidth - m_frameWidth / 4.f)
-//        || (shipPos->x < m_frameWidth / 4.f)) { // Horizontal edges
-//        m_camera.translate(shipVel->x, 0.f);
-//    }
+                auto sprite = cell->getComponent<SpriteComponent>();
+                sprite->sprite = make_shared<Sprite>();
+                sprite->sprite->addTexture(utils::getResourcePath("cube.obj"), cubeSize,
+                                           cubeSize, cubeSize);
+                sprite->sprite->generateDataBuffer();
+                m_cells[i][j][k] = cell;
 
-//    if ((shipPos->y >= m_frameHeight - m_frameHeight / 4.f)
-//        || (shipPos->y < m_frameHeight / 4.f)) { // Vertical edges
-//        m_camera.translate(0.f, shipVel->y);
-//    }
+                auto cellComp = cell->getComponent<CellComponent>();
+                if (std::count(initial_cells.cbegin(),
+                               initial_cells.cend(), std::array<size_t, 3>{i, j, k}) != 0) {
+                    cellComp->alive = true;
+                } else {
+                    cellComp->alive = false;
+                }
+            }
+        }
+    }
 }
 

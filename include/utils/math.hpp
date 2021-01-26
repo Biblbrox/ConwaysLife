@@ -61,6 +61,14 @@ namespace utils::math {
         return tr2;
     }
 
+    template <typename T>
+    inline glm::vec3 operator/(T val, const glm::vec3& vec)
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter"
+                                                   " must be arithmetical");
+        return glm::vec3(val / vec.x, val / vec.y, val / vec.z);
+    }
+
 }
 
 #endif //MATH_HPP

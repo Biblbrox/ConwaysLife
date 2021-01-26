@@ -4,6 +4,7 @@
 #include "systems/renderersystem.hpp"
 #include "components/levelcomponent.hpp"
 #include "components/spritecomponent.hpp"
+#include "components/cellcomponent.hpp"
 #include "render/render.hpp"
 #include "utils/logger.hpp"
 #include "exceptions/glexception.hpp"
@@ -31,11 +32,17 @@ void RendererSystem::drawSprites()
     auto sprites = getEntitiesByTag<SpriteComponent>();
     auto program = LifeProgram::getInstance();
     for (const auto& [key, en]: sprites) {
+        std::shared_ptr<CellComponent> cell;
+        if ((cell = en->getComponent<CellComponent>()))
+            if (!cell->alive)
+                continue;
+
+        const glm::vec3 pos =
+                glm::vec3(en->getComponent<PositionComponent>()->x,
+                          en->getComponent<PositionComponent>()->y,
+                          en->getComponent<PositionComponent>()->z);
         render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite,
-                            en->getComponent<PositionComponent>()->x,
-                            en->getComponent<PositionComponent>()->y,
-                            en->getComponent<PositionComponent>()->angle,
-                            en->getComponent<PositionComponent>()->scale_factor);
+                            pos, en->getComponent<PositionComponent>()->angle);
     }
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)

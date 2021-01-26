@@ -10,6 +10,7 @@
 #include "utils/timer.hpp"
 #include "utils/utils.hpp"
 #include "ces/basesystem.hpp"
+#include "ces/entity.hpp"
 #include "render/camera.hpp"
 #include "utils/audio.hpp"
 #include "ces/cesmanager.hpp"
@@ -17,15 +18,17 @@
 /**
  * To avoid circular including
  */
-class Entity;
+//class Entity;
 class Component;
 
 using utils::type_id;
 
+inline constexpr size_t mapSize = 6;
+
 class World: public CesManager
 {
 public:
-    World() : m_scaled(false), m_wasInit(false){};
+    World() : m_scaled(false), m_wasInit(false) {};
     ~World() = default;
 
     void init() override;
@@ -44,11 +47,12 @@ private:
     utils::Fps m_fps;
 
     void update_text();
-    void update_level();
+    void update_field();
+    void update_sprites();
     void init_sound();
     void init_sprites();
     void init_text();
-    void init_level();
+    void init_field();
 
     TTF_Font* open_font(const std::string& font, size_t fontSize);
 
@@ -61,9 +65,10 @@ private:
     const GLfloat m_scaleFactor = 1.5f;
     utils::audio::Audio m_audio;
 
-    bool m_wasInit;
+    std::array<std::array<std::array<std::shared_ptr<Entity>,
+            mapSize>, mapSize>, mapSize> m_cells;
 
-    void update_sprites();
+    bool m_wasInit;
 };
 
 #endif //MOONLANDER_WORLD_HPP

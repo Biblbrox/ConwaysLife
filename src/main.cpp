@@ -28,11 +28,10 @@ int main(int argc, char *args[])
         program->loadProgram();
         glm::mat4 perspective = glm::perspective(
                 glm::radians(45.f),
-                (float)screen_width / (float)screen_height, 0.1f, 100.f);
+                (float)screen_width / (float)screen_height, 0.1f, 1000.f);
         program->setProjection(perspective);
         program->setModel(glm::mat4(1.f));
-        glm::mat4 view = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -50.f));
-        program->setView(view);
+        program->setView(glm::mat4(1.f));
         program->updateModel();
         program->updateView();
         program->updateProjection();
@@ -50,7 +49,7 @@ int main(int argc, char *args[])
         Camera camera;
         while (isGameRunnable()) {
             glViewport(0.f, 0.f, screen_width, screen_height);
-            glClearColor(0.f, 0.f, 0.0f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             GLfloat cur_time = SDL_GetTicks();
@@ -67,7 +66,6 @@ int main(int argc, char *args[])
             int y;
             GLfloat x_offset;
             GLfloat y_offset;
-            bool first_mouse = true;
             while (SDL_PollEvent(&e)) {
                 switch (e.type) {
                     case SDL_QUIT:
@@ -75,12 +73,6 @@ int main(int argc, char *args[])
                     case SDL_MOUSEMOTION:
                         x = e.motion.x;
                         y = e.motion.y;
-
-//                        if (first_mouse) {
-//                            lastX = x;
-//                            lastY = y;
-//                            first_mouse = false;
-//                        }
 
                         x_offset = x - lastX;
                         y_offset = lastY - y;
@@ -110,7 +102,6 @@ int main(int argc, char *args[])
                         break;
                 }
 
-
                 const Uint8* state = SDL_GetKeyboardState(nullptr);
 
                 GLfloat camSpeed = 0.01f * delta_time;
@@ -122,6 +113,7 @@ int main(int argc, char *args[])
                     camera.translateLeft(camSpeed);
                 if (state[SDL_SCANCODE_D])
                     camera.translateRight(camSpeed);
+
                 program->setView(camera.getView());
                 program->updateView();
             }

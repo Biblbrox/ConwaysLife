@@ -9,19 +9,20 @@
 using utils::log::Category;
 using utils::log::program_log_file_name;
 using utils::log::shader_log_file_name;
+using utils::units;
 using boost::format;
 
-Sprite::Sprite(const std::string& path)
+Sprite::Sprite()
 {
-    load(path);
     m_vao = nullptr;
-    m_totSprites = 0;
+    m_texCount = 0;
     m_curIdx = 0;
 }
 
 void Sprite::load(const std::string& path)
 {
     assert(!path.empty());
+    // TODO: use loadTexture()
     freeTexture();
     SDL_Surface* surface = IMG_Load(path.c_str());
     if (!surface)
@@ -37,112 +38,51 @@ void Sprite::load(const std::string& path)
 
     m_textureWidth = flipped->w;
     m_textureHeight = flipped->h;
-
     m_textureId = utils::loadTextureFromPixels32(
             static_cast<GLuint*>(flipped->pixels),
             m_textureWidth, m_textureHeight, texture_format);
     SDL_FreeSurface(flipped);
 }
 
-GLuint Sprite::addClipSprite(utils::Rect clip)
+GLuint Sprite::addTexture(const std::string& objFile,
+                          GLfloat textureWidth, GLfloat textureHeight,
+                          GLfloat textureDepth)
 {
-    m_clips.push_back(clip);
-    return m_clips.size() - 1;
+    std::string textureFile;
+    m_vertices.emplace_back(utils::loadObj(objFile, textureFile));
+
+    GLuint textureId = utils::loadTexture(utils::getResourcePath(textureFile),
+                                          nullptr, nullptr);
+    m_textureIds.emplace_back(textureId);
+
+    utils::Rect rect{};
+    rect.w = units(textureWidth);
+    rect.h = units(textureHeight);
+    rect.d = units(textureDepth);
+    m_sizes.emplace_back(rect);
+
+    ++m_texCount;
 }
 
 utils::Rect Sprite::getClip(GLuint idx) noexcept
 {
-    assert(idx < m_totSprites);
-    return m_clips[idx];
+    assert(idx < m_texCount);
+    return m_sizes[idx];
 }
 
 void Sprite::generateDataBuffer()
 {
-    if (m_textureId != 0 && !m_clips.empty()) {
-        m_totSprites = m_clips.size();
-        m_vao = new GLuint[m_totSprites];
+    if (!m_textureIds.empty()) {
+        m_texCount = m_sizes.size();
+        m_vao = new GLuint[m_texCount];
 
-        glGenVertexArrays(m_totSprites, m_vao);
+        glGenVertexArrays(m_texCount, m_vao);
         GLuint VBO;
-        GLuint EBO;
-        GLfloat tw = m_textureWidth;
-        GLfloat th = m_textureHeight;
+//        GLuint EBO;
 
-//        GLuint indices[] = {
-//                3, 1, 0,
-//                3, 2, 1
-//        };
+        for (GLuint i = 0; i < m_texCount; ++i) {
 
-//        GLuint indices[] = {
-//                 // Back edge
-//
-//
-//        };
-//
-        GLfloat vertices[] = {
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-        };
-        for (GLuint i = 0; i < m_totSprites; ++i) {
-//            vertices[0] = 0.5f; // Right bottom x // 1 row
-//            vertices[1] = -0.5f; // Right bottom y // 1 row
-//            vertices[2] = (m_clips[i].x + m_clips[i].w) / tw; // 1 row
-//            vertices[3] = (m_clips[i].y + m_clips[i].h) / th; // 1 row
-//
-//            vertices[4] = 0.5f; // Right top x // 2 row
-//            vertices[5] = 0.5f; // Right top y // 2 row
-//            vertices[6] = (m_clips[i].x + m_clips[i].w) / tw; // 2 row
-//            vertices[7] = m_clips[i].y / th; // 2 row
-//
-//            vertices[8] = -0.5f; // Left top x // 3 row
-//            vertices[9] = 0.5f; // Left top y // 3 row
-//            vertices[10] = m_clips[i].x / tw; // 3 row
-//            vertices[11] = m_clips[i].y / th; // 3 row
-//
-//            vertices[12] = -0.5f; // Bottom left x // 4 row
-//            vertices[13] = -0.5f; // Bottom left y // 4 row
-//            vertices[14] = m_clips[i].x / tw; // 4 row
-//            vertices[15] = (m_clips[i].y + m_clips[i].h) / th; // 4 row
-
+            GLfloat* vertices = &m_vertices[i][0];
             glBindVertexArray(m_vao[i]);
             glGenBuffers(1, &VBO);
 //            glGenBuffers(1, &EBO);
@@ -150,15 +90,15 @@ void Sprite::generateDataBuffer()
 //            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
 //                         GL_STATIC_DRAW);
 
+            size_t vertSize = m_vertices[i].size() * sizeof(GLfloat);
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
-                         GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, vertSize, vertices, GL_STATIC_DRAW);
 
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, // Pos of vertices
                                   5 * sizeof(GLfloat), nullptr);
             glEnableVertexAttribArray(0);
 
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), // Texture pos
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), // UV coords
                                   (void*)(3 * sizeof(GLfloat)));
             glEnableVertexAttribArray(1);
 
@@ -172,10 +112,10 @@ void Sprite::generateDataBuffer()
 
     } else {
         if (m_textureId == 0)
-            throw SdlException("No texture to render\n",
+            throw SdlException("No texture to generate from\n",
                                program_log_file_name(), Category::INTERNAL_ERROR);
 
-        if (m_clips.empty())
+        if (m_sizes.empty())
             throw SdlException("No data generate from\n",
                                program_log_file_name(), Category::INTERNAL_ERROR);
     }
@@ -184,12 +124,12 @@ void Sprite::generateDataBuffer()
 void Sprite::freeVBO() noexcept
 {
     if (m_vao) {
-        glDeleteVertexArrays(m_totSprites, m_vao);
+        glDeleteVertexArrays(m_texCount, m_vao);
         delete[] m_vao;
         m_vao = nullptr;
     }
 
-    m_clips.clear();
+    m_sizes.clear();
 }
 
 Sprite::~Sprite()
@@ -209,27 +149,37 @@ GLuint Sprite::getIdx() const noexcept
 
 utils::Rect Sprite::getCurrentClip() const noexcept
 {
-    return m_clips[m_curIdx];
+    return m_sizes[m_curIdx];
 }
 
 void Sprite::setIdx(GLuint idx)
 {
-    assert(idx < m_totSprites);
+    assert(idx < m_texCount);
     m_curIdx = idx;
 }
 
 GLuint Sprite::getWidth() const noexcept
 {
-    return m_clips[m_curIdx].w;
+    return m_sizes[m_curIdx].w;
 }
 
 GLuint Sprite::getHeight() const noexcept
 {
-    return m_clips[m_curIdx].h;
+    return m_sizes[m_curIdx].h;
 }
 
 GLuint Sprite::getSpritesCount() const noexcept
 {
-    return m_totSprites;
+    return m_texCount;
+}
+
+GLuint Sprite::getTextureID() const
+{
+    return m_textureIds[m_curIdx];
+}
+
+GLuint Sprite::getDepth() const noexcept
+{
+    return m_sizes[m_curIdx].d;
 }
 

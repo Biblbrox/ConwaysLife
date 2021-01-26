@@ -9,6 +9,7 @@ struct PositionComponent : Component
 {
     GLfloat x;
     GLfloat y;
+    GLfloat z;
     GLfloat angle;
     GLfloat scale_factor = 1.f;
     GLfloat scallable = true;

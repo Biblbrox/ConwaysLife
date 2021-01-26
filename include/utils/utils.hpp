@@ -29,10 +29,10 @@ namespace utils
     {
         GLfloat x;
         GLfloat y;
-//        GLfloat z;
+        GLfloat z;
         GLfloat w;
         GLfloat h;
-//        GLfloat d;
+        GLfloat d;
     };
 
     struct RectPoints
@@ -122,6 +122,11 @@ namespace utils
         return clips;
     }
 
+    constexpr GLfloat units(const GLfloat val)
+    {
+        return val * gl::unitSize;
+    }
+
     namespace physics
     {
         /**
@@ -176,6 +181,27 @@ namespace utils
     loadTextureFromPixels32(const GLuint *pixels, GLuint width, GLuint height,
                             GLenum textureType = GL_RGBA);
 
+    /**
+     * Parse obj file
+     * Return vector with such elements in row:
+     * <ver.x, ver.y, ver.z, uv.x, uv.y>
+     * @param file
+     * @return
+     */
+    std::vector<GLfloat> loadObj(const std::string& file,
+                                 std::string& textureFile);
+
+    /**
+     * Load texture from file
+     * Return texture id.
+     * textureWidth and textureHeight fields used to store texture size
+     * @param file
+     * @param textureWidth
+     * @param textureHeight
+     * @return
+     */
+    GLuint loadTexture(const std::string& file,
+                       GLuint* textureWidth, GLuint* textureHeight);
 
     /**
     * Load shader from file by specific path

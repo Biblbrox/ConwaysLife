@@ -12,7 +12,7 @@ public:
     virtual void init() = 0;
     virtual void update(size_t delta) = 0;
 
-    virtual Entity& createEntity(const std::string& name);
+    virtual std::shared_ptr<Entity> createEntity(const std::string& name);
 
     template <typename SystemType>
     SystemType& createSystem()
