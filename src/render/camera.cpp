@@ -1,61 +1,97 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/epsilon.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <iostream>
 
 #include "render/camera.hpp"
 
+Camera::Camera(const glm::vec3& pos, const glm::vec3& up, GLfloat yaw, GLfloat pitch)
+        : m_movSpeed(initSpeed), m_mouseSens(initSens),
+          m_zoom(initZoom)
+{
+    m_pos = pos;
+    m_yaw = yaw;
+    m_pitch = pitch;
+}
+
 GLfloat Camera::getX() const
 {
-
+    return m_pos.x;
 }
 
 GLfloat Camera::getY() const
 {
+    return m_pos.y;
+}
 
+GLfloat Camera::getZ() const
+{
+    return m_pos.z;
 }
 
 void Camera::setX(GLfloat x)
 {
-
+    m_pos.x = x;
 }
 
 void Camera::setY(GLfloat y)
 {
-
+    m_pos.y = y;
 }
 
-Camera::Camera() : m_pos(0.f, 0.f, -3.f),
-                   m_front(0.f, 0.f, -1.f),
-                   m_up(0.f, 1.f, 0.f)
+void Camera::setZ(GLfloat z)
 {
+    m_pos.z = z;
 }
 
 glm::mat4 Camera::getView() const
 {
-    return glm::lookAt(m_pos, m_pos + m_front, m_up);
+    return glm::translate(glm::mat4(1.f), m_pos)
+           * glm::eulerAngleXY(glm::radians(m_pitch),
+                               glm::radians(m_yaw));
 }
 
-void Camera::translateRight(GLfloat val)
+void Camera::setPos(const glm::vec3& pos)
 {
-    m_pos += glm::normalize(glm::cross(m_front, m_up)) * val;
+    m_pos = pos;
 }
 
-void Camera::translateLeft(GLfloat val)
+glm::vec3 Camera::getPos() const
 {
-    m_pos -= glm::normalize(glm::cross(m_front, m_up)) * val;
+    return m_pos;
 }
 
-void Camera::translateForward(GLfloat val)
+void Camera::processMovement(GLfloat xoffset, GLfloat yoffset,
+                             GLfloat constrainPitch)
 {
-    m_pos += val * m_front;
+    xoffset *= m_mouseSens;
+    yoffset *= m_mouseSens;
+
+    m_yaw += xoffset;
+    m_pitch += yoffset;
+
+    if (constrainPitch) {
+        if (m_pitch > 89.f)
+            m_pitch = 89.f;
+        if (m_pitch < -89.f)
+            m_pitch = -89.f;
+    }
 }
 
-void Camera::translateBack(GLfloat val)
+void Camera::processScroll(GLfloat yoffset)
 {
-    m_pos -= val * m_front;
+    m_zoom -= yoffset;
+    if (m_zoom < 1.f)
+        m_zoom = 1.f;
+    if (m_zoom > 90.f)
+        m_zoom = 90.f;
 }
 
-void Camera::setFront(glm::vec3 front)
+glm::mat4 Camera::getProjection(GLfloat screen_width, GLfloat screen_height) const
 {
-    m_front = front;
+    return glm::perspective(
+            m_zoom,
+            (float)screen_width / (float)screen_height, 0.1f, 1000.f);
 }
-

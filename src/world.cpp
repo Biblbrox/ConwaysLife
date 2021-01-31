@@ -1,15 +1,12 @@
 #include <memory>
-#include <glm/gtc/constants.hpp>
 #include <boost/format.hpp>
-#include <glm/trigonometric.hpp>
 
 #include "base.hpp"
 #include "world.hpp"
+//#include "config.hpp"
 #include "components/positioncomponent.hpp"
 #include "components/cellcomponent.hpp"
 #include "components/spritecomponent.hpp"
-#include "components/velocitycomponent.hpp"
-#include "components/levelcomponent.hpp"
 #include "systems/renderersystem.hpp"
 #include "systems/movementsystem.hpp"
 #include "components/textcomponent.hpp"
@@ -19,8 +16,6 @@
 #include "systems/physicssystem.hpp"
 #include "systems/particlerendersystem.hpp"
 #include "utils/random.hpp"
-#include "components/lifetimecomponent.hpp"
-#include "game.hpp"
 #include "exceptions/sdlexception.hpp"
 
 using utils::log::Logger;
@@ -33,15 +28,15 @@ using std::vector;
 using std::make_shared;
 using std::sin;
 using std::cos;
-using glm::half_pi;
 using std::find_if;
-using glm::pi;
 using utils::fix_coords;
 
 const char* const msgFont = "kenvector_future2.ttf";
 const SDL_Color fontColor = {0xFF, 0xFF, 0xFF, 0xFF};
 
 const GLfloat cubeSize = 20.f;
+
+//const char*
 
 void World::update_text()
 {
@@ -253,8 +248,12 @@ TTF_Font* World::open_font(const std::string& fontName, size_t fontSize)
 void World::init_field()
 {
     const std::vector<std::array<size_t, 3>> initial_cells = {
-            {1, 3, 3}, {2, 3, 3}, {3, 3, 3}
+            {mapSize / 2, mapSize / 2, mapSize / 2}
     };
+
+    GLfloat init_x = -1.f;
+    GLfloat init_y = -1.f;
+    GLfloat init_z = -1.f;
 
     for (size_t i = 0; i < mapSize; ++i) {
         for (size_t j = 0; j < mapSize; ++j) {
@@ -266,9 +265,9 @@ void World::init_field()
                 cell->addComponents<SpriteComponent, CellComponent, PositionComponent>();
 
                 auto pos = cell->getComponent<PositionComponent>();
-                pos->x = 2.f * i;
-                pos->y = 2.f * j;
-                pos->z = 2.f * k;
+                pos->x = init_x + 2.f * i;
+                pos->y = init_y + 2.f * j;
+                pos->z = init_z + 2.f * k;
 
                 auto sprite = cell->getComponent<SpriteComponent>();
                 sprite->sprite = make_shared<Sprite>();
@@ -287,5 +286,8 @@ void World::init_field()
             }
         }
     }
+
+//    Config::addVal("")
+
 }
 

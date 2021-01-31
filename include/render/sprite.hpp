@@ -13,7 +13,6 @@ class Sprite: public Texture
 public:
     explicit Sprite();
     ~Sprite();
-    void load(const std::string& path);
     GLuint addTexture(const std::string& objFile,
                       GLfloat textureWidth,
                       GLfloat textureHeight, GLfloat textureDepth);

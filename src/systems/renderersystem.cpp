@@ -2,7 +2,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "systems/renderersystem.hpp"
-#include "components/levelcomponent.hpp"
 #include "components/spritecomponent.hpp"
 #include "components/cellcomponent.hpp"
 #include "render/render.hpp"

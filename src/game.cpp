@@ -19,8 +19,8 @@
 static bool imgInit = false;
 static bool mixerInit = false;
 
-static SDL_Window* m_window;
-static SDL_GLContext m_glcontext;
+SDL_Window* m_window;
+SDL_GLContext m_glcontext;
 
 static bool isRun = true;
 static GameStates state = GameStates::NORMAL;
@@ -122,18 +122,12 @@ void Game::initOnceSDL2()
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
-    SDL_ShowCursor(SDL_DISABLE);
-    if (SDL_ShowCursor(SDL_QUERY) != SDL_DISABLE)
-        Logger::write(program_log_file_name(), Category::INITIALIZATION_ERROR,
-                      (format("Warning: Unable to hide cursor. "
-                              "SDL Error: %s\n")
-                       % SDL_GetError()).str());
-
-    if (SDL_CaptureMouse(SDL_TRUE) != 0)
-        Logger::write(program_log_file_name(), Category::INITIALIZATION_ERROR,
-                      (format("Warning: Unable to capture mouse. "
-                              "SDL Error: %s\n")
-                       % SDL_GetError()).str());
+//    SDL_ShowCursor(SDL_DISABLE);
+//    if (SDL_ShowCursor(SDL_QUERY) != SDL_DISABLE)
+//        Logger::write(program_log_file_name(), Category::INITIALIZATION_ERROR,
+//                      (format("Warning: Unable to hide cursor. "
+//                              "SDL Error: %s\n")
+//                       % SDL_GetError()).str());
 }
 
 

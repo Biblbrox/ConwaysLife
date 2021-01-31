@@ -132,3 +132,18 @@ void ShaderProgram::leftMultProjection(glm::mat4 matrix)
 {
     m_projectionMatrix = matrix * m_projectionMatrix;
 }
+
+void ShaderProgram::multModel(glm::vec4 vec)
+{
+    m_modelMatrix *= vec;
+}
+
+void ShaderProgram::multView(glm::vec4 vec)
+{
+    m_viewMatrix *= vec;
+}
+
+void ShaderProgram::multProjection(glm::vec4 vec)
+{
+    m_projectionMatrix *= vec;
+}

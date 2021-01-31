@@ -24,6 +24,9 @@ public:
     virtual void leftMultView(glm::mat4 matrix);
     virtual void leftMultModel(glm::mat4 matrix);
     virtual void leftMultProjection(glm::mat4 matrix);
+    virtual void multModel(glm::vec4 vec);
+    virtual void multView(glm::vec4 vec);
+    virtual void multProjection(glm::vec4 vec);
 
     virtual void updateProjection() = 0;
     virtual void updateView() = 0;

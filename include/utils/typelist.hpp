@@ -22,6 +22,38 @@ namespace utils
     {
     };
 
+    /**
+     * Add Type to TypeList
+     * @tparam H
+     * @tparam TypeList
+     */
+    template<typename... Args>
+    struct AddToTypeList;
+
+    template<typename H, typename... T>
+    struct AddToTypeList<H, TypeList<T...>>
+    {
+        using TL = TypeList<T..., H>;
+    };
+
+    template <size_t counter, typename... Args>
+    struct GetFromTypeListHelper
+    {
+        using TL = GetFromTypeListHelper<counter - 1, typename TypeList<Args...>::Tail>;
+    };
+
+    template <typename... Args>
+    struct GetFromTypeListHelper<0, TypeList<Args...>>
+    {
+        using TL = typename TypeList<Args...>::Head;
+    };
+
+    template<size_t idx, typename... Args>
+    struct GetFromTypeList
+    {
+        using Type = typename GetFromTypeListHelper<idx, TypeList<Args...>>::TL;
+    };
+
     template<typename TypeList>
     struct Length
     {

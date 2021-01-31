@@ -19,31 +19,6 @@ Sprite::Sprite()
     m_curIdx = 0;
 }
 
-void Sprite::load(const std::string& path)
-{
-    assert(!path.empty());
-    // TODO: use loadTexture()
-    freeTexture();
-    SDL_Surface* surface = IMG_Load(path.c_str());
-    if (!surface)
-        throw SdlException((format("Unable to create blended text. "
-                                   "SDL_ttf Error: %s\n")
-                            % TTF_GetError()).str());
-    SDL_Surface* flipped = utils::flipVertically(surface);
-    SDL_FreeSurface(surface);
-    if (!flipped)
-        throw SdlException((format("Unable to flip surface %p\n") % surface).str());
-
-    GLenum texture_format = utils::getSurfaceFormatInfo(*flipped);
-
-    m_textureWidth = flipped->w;
-    m_textureHeight = flipped->h;
-    m_textureId = utils::loadTextureFromPixels32(
-            static_cast<GLuint*>(flipped->pixels),
-            m_textureWidth, m_textureHeight, texture_format);
-    SDL_FreeSurface(flipped);
-}
-
 GLuint Sprite::addTexture(const std::string& objFile,
                           GLfloat textureWidth, GLfloat textureHeight,
                           GLfloat textureDepth)
