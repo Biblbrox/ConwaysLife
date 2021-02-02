@@ -6,7 +6,7 @@
 
 #include "world.hpp"
 
-#define WINDOW_FLAGS (SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL)
+#define WINDOW_FLAGS (SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)
 #define IMG_FLAGS IMG_INIT_PNG
 
 enum class GameStates {
@@ -16,16 +16,12 @@ enum class GameStates {
     NEED_REPLAY
 };
 
-extern SDL_Window* m_window;
-extern SDL_GLContext m_glcontext;
-
 void quit();
 void setGameRunnable(bool runnable);
 bool isGameRunnable();
 void setGameState(GameStates state);
 GameStates getGameState();
 GameStates getPrevGameState();
-
 class Game
 {
 public:
@@ -40,6 +36,16 @@ public:
 
     void update(size_t delta);
 
+    static SDL_Window* getWindow()
+    {
+        return Game::m_window;
+    }
+
+    static SDL_GLContext getGLContext()
+    {
+        return Game::m_glcontext;
+    }
+
 private:
     GLuint m_screenWidth;
     GLuint m_screenHeight;
@@ -47,6 +53,8 @@ public:
     bool vsync_supported;
 private:
     World m_world;
+    static SDL_Window* m_window;
+    static SDL_GLContext m_glcontext;
 };
 
 #endif //MOONLANDER_GAME_HPP

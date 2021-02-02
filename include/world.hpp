@@ -29,7 +29,7 @@ class World: public CesManager
 {
 public:
     World() : m_scaled(false), m_wasInit(false) {};
-    ~World() = default;
+    ~World();
 
     void init() override;
     void update(size_t delta) override;
@@ -48,9 +48,7 @@ private:
 
     void update_text();
     void update_field();
-    void update_sprites();
     void init_sound();
-    void init_sprites();
     void init_text();
     void init_field();
 

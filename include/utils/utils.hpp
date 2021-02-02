@@ -221,7 +221,7 @@ namespace utils
      * @return
      */
     template<typename T>
-    inline T getScreenWidth() noexcept
+    inline T getDisplayWidth() noexcept
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter "
                                                "must be arithmetical");
@@ -234,7 +234,7 @@ namespace utils
     }
 
     template<typename T>
-    inline T getScreenHeight() noexcept
+    inline T getDisplayHeight() noexcept
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter "
                                                "must be arithmetical");
@@ -246,6 +246,66 @@ namespace utils
         SDL_GetCurrentDisplayMode(0, &dm);
         return dm.h;
     }
+
+    template<typename T>
+    inline glm::vec<2, T> getDisplaySize() noexcept
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter "
+                                               "must be arithmetical");
+
+        if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
+            return {0, 0};
+
+        SDL_DisplayMode dm;
+        SDL_GetCurrentDisplayMode(0, &dm);
+        return {dm.w, dm.h};
+    }
+
+    template<typename T>
+    inline T getWindowHeight(SDL_Window& window) noexcept
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter "
+                                               "must be arithmetical");
+
+        if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
+            return 0;
+
+        int height;
+        SDL_GetWindowSize(&window, nullptr, &height);
+
+        return height;
+    }
+
+    template<typename T>
+    inline T getWindowWidth(SDL_Window& window) noexcept
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter "
+                                               "must be arithmetical");
+
+        if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
+            return 0;
+
+        int width;
+        SDL_GetWindowSize(&window, &width, nullptr);
+
+        return width;
+    }
+
+    template<typename T>
+    inline glm::vec<2, T> getWindowSize(SDL_Window& window) noexcept
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter "
+                                               "must be arithmetical");
+
+        if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
+            return {0, 0};
+
+        int width, height;
+        SDL_GetWindowSize(&window, &width, &height);
+
+        return {width, height};
+    }
+
 
     /**
      * Flip vertically SDL_Surface

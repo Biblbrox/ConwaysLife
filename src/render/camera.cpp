@@ -1,15 +1,14 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/epsilon.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/euler_angles.hpp>
-#include <iostream>
 
 #include "render/camera.hpp"
 
+std::shared_ptr<Camera> Camera::instance = nullptr;
+
 Camera::Camera(const glm::vec3& pos, const glm::vec3& up, GLfloat yaw, GLfloat pitch)
-        : m_movSpeed(initSpeed), m_mouseSens(initSens),
-          m_zoom(initZoom)
+        : m_mouseSens(initSens), m_zoom(initZoom)
 {
     m_pos = pos;
     m_yaw = yaw;

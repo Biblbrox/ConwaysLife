@@ -62,6 +62,14 @@ namespace utils::math {
     }
 
     template <typename T>
+    inline glm::vec2 operator/(T val, const glm::vec2& vec)
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter"
+                                               " must be arithmetical");
+        return glm::vec2(val / vec.x, val / vec.y);
+    }
+
+    template <typename T>
     inline glm::vec3 operator/(T val, const glm::vec3& vec)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
@@ -69,6 +77,37 @@ namespace utils::math {
         return glm::vec3(val / vec.x, val / vec.y, val / vec.z);
     }
 
+    template <typename T>
+    inline glm::vec4 operator/(T val, const glm::vec4& vec)
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter"
+                                               " must be arithmetical");
+        return glm::vec4(val / vec.x, val / vec.y, val / vec.z, val / vec.w);
+    }
+
+    template <typename T>
+    inline glm::vec2 operator/(const glm::vec2& vec, T val)
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter"
+                                               " must be arithmetical");
+        return glm::vec2(vec.x / val, vec.y / val);
+    }
+
+    template <typename T>
+    inline glm::vec3 operator/(const glm::vec3& vec, T val)
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter"
+                                               " must be arithmetical");
+        return glm::vec3(vec.x / val, vec.y / val, vec.z / val);
+    }
+
+    template <typename T>
+    inline glm::vec4 operator/(const glm::vec4& vec, T val)
+    {
+        static_assert(std::is_arithmetic_v<T>, "Template parameter"
+                                               " must be arithmetical");
+        return glm::vec4(vec.x / val, vec.y / val, vec.z / val, vec.w / val);
+    }
 }
 
 #endif //MATH_HPP

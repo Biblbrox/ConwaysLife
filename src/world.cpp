@@ -1,9 +1,13 @@
 #include <memory>
 #include <boost/format.hpp>
+#include <imgui.h>
+#include <imgui_impl_sdl.h>
+#include <imgui_impl_opengl3.h>
 
 #include "base.hpp"
 #include "world.hpp"
-//#include "config.hpp"
+#include "config.hpp"
+#include "game.hpp"
 #include "components/positioncomponent.hpp"
 #include "components/cellcomponent.hpp"
 #include "components/spritecomponent.hpp"
@@ -17,6 +21,7 @@
 #include "systems/particlerendersystem.hpp"
 #include "utils/random.hpp"
 #include "exceptions/sdlexception.hpp"
+#include "exceptions/glexception.hpp"
 
 using utils::log::Logger;
 using utils::getResourcePath;
@@ -68,11 +73,6 @@ void World::update(size_t delta)
 void World::init()
 {
     if (!m_wasInit) {
-        m_screenWidth = utils::getScreenWidth<GLuint>();
-        m_screenHeight = utils::getScreenHeight<GLuint>();
-        m_frameWidth = m_screenWidth;
-        m_frameHeight = m_screenHeight;
-
         createSystem<RendererSystem>();
         createSystem<MovementSystem>();
         createSystem<KeyboardSystem>();
@@ -291,3 +291,9 @@ void World::init_field()
 
 }
 
+World::~World()
+{
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+}

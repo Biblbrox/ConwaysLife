@@ -22,6 +22,8 @@ const int gl_bool_size = 4;
 const int gl_int_size = 4;
 const int gl_float_size = 4;
 
+std::shared_ptr<LifeProgram> LifeProgram::instance = nullptr;
+
 constexpr int next_offset(int cur_offset, int base_alignment)
 {
     if (cur_offset % base_alignment == 0)
@@ -39,50 +41,73 @@ LifeProgram::LifeProgram()
     m_colorLoc = 0;
 }
 
-void LifeProgram::loadProgram()
+GLuint create_program(const std::string& vertex, const std::string& fragment,
+                      const std::string& geometry = "")
 {
-    m_programID = glCreateProgram();
-    if (m_programID == 0)
+    GLuint vertexShader, fragmentShader, geometryShader;
+
+    GLuint program = glCreateProgram();
+    if (program == 0)
         throw GLException((format("Unable to create program %d\n")
-                           % m_programID).str(),
+                           % program).str(),
                           program_log_file_name(),
                           Category::INITIALIZATION_ERROR);
 
     // Vertex shader
-    m_vertexShader = loadShaderFromFile(
-            getShaderPath("LifeGame.glvs"), GL_VERTEX_SHADER);
+    vertexShader = loadShaderFromFile(
+            getShaderPath(vertex), GL_VERTEX_SHADER);
     // Vertex shader end
 
     // Fragment shader
-    m_fragmentShader = loadShaderFromFile(
-            getShaderPath("LifeGame.glfs"), GL_FRAGMENT_SHADER);
+    fragmentShader = loadShaderFromFile(
+            getShaderPath(fragment), GL_FRAGMENT_SHADER);
     // Fragment shader end
 
-    glAttachShader(m_programID, m_fragmentShader);
-    glAttachShader(m_programID, m_vertexShader);
+    if (!geometry.empty())
+        geometryShader = loadShaderFromFile(
+                getShaderPath(geometry), GL_GEOMETRY_SHADER);
+
+    glAttachShader(program, fragmentShader);
+    glAttachShader(program, vertexShader);
+    if (!geometry.empty())
+        glAttachShader(program, geometryShader);
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
-        utils::log::printProgramLog(m_programID);
+        utils::log::printProgramLog(program);
         throw GLException("Unable to attach shaders.\n",
                           program_log_file_name(),
                           Category::INITIALIZATION_ERROR);
     }
 
-    glLinkProgram(m_programID);
+    glLinkProgram(program);
     GLint linkSuccess = GL_TRUE;
-    glGetProgramiv(m_programID, GL_LINK_STATUS, &linkSuccess);
+    glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
     if (linkSuccess != GL_TRUE) {
-        utils::log::printProgramLog(m_programID);
+        utils::log::printProgramLog(program);
         throw GLException((format("Unable to link program: %d, %s\n")
-                           % m_programID % glGetError()).str(),
+                           % program % glGetError()).str(),
                           program_log_file_name(),
                           Category::INITIALIZATION_ERROR);
     }
 
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    if (!geometry.empty())
+        glDeleteShader(geometryShader);
+
+    return program;
+}
+
+void LifeProgram::loadProgram()
+{
+    // Create framebuffer program
+    m_frameBufProg = create_program("framebuffer/LifeGame.glvs",
+                                    "framebuffer/LifeGame.glfs");
+
     // Get block indices
-    GLuint matrixLoc = glGetUniformBlockIndex(m_programID, "Matrices");
+    GLuint matrixLoc = glGetUniformBlockIndex(m_frameBufProg, "Matrices");
 
     // Link shader's uniform block to uniform binding point
-    glUniformBlockBinding(m_programID, matrixLoc, 0); // Matrices
+    glUniformBlockBinding(m_frameBufProg, matrixLoc, 0); // Matrices
 
     // Create matrices buffer
     glGenBuffers(1, &m_matricesUBO);
@@ -92,7 +117,11 @@ void LifeProgram::loadProgram()
     // Bind matrices to 0 index in binding point array
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_matricesUBO);
 
-    glUseProgram(m_programID);
+    // Create screen program
+    m_screenProg = create_program("screen/LifeGame.glvs",
+                                  "screen/LifeGame.glfs");
+
+    useFramebufferProgram();
     rebindUniforms();
     setTexture(0);
 }
@@ -104,18 +133,15 @@ void LifeProgram::setTexture(int texture)
 
 LifeProgram::~LifeProgram()
 {
-    remove_shaders();
     remove_programs();
     free_buffers();
 }
 
-std::shared_ptr<LifeProgram> LifeProgram::instance = nullptr;
-
 void LifeProgram::rebindUniforms()
 {
-    m_texLoc = glGetUniformLocation(m_programID, textureNumberGL);
+    m_texLoc = glGetUniformLocation(m_curProgram, textureNumberGL);
     if (m_texLoc == -1) {
-        utils::log::printProgramLog(m_programID);
+        utils::log::printProgramLog(m_curProgram);
         throw GLException((format("%s is not a valid glsl program variable!\n")
                            % textureNumberGL).str(),
                           program_log_file_name(),
@@ -125,9 +151,14 @@ void LifeProgram::rebindUniforms()
 
 void LifeProgram::remove_programs()
 {
-    if (glIsProgram(m_programID)) {
-        glDeleteProgram(m_programID);
-        m_programID = 0;
+    if (glIsProgram(m_frameBufProg)) {
+        glDeleteProgram(m_frameBufProg);
+        m_frameBufProg = 0;
+    }
+
+    if (glIsProgram(m_screenProg)) {
+        glDeleteProgram(m_screenProg);
+        m_screenProg = 0;
     }
 }
 
@@ -139,24 +170,18 @@ void LifeProgram::free_buffers()
     m_matricesUBO = m_textureDataUBO = 0;
 }
 
-void LifeProgram::remove_shaders()
-{
-    if (glIsShader(m_fragmentShader))
-        glDeleteShader(m_fragmentShader);
-
-    if (glIsShader(m_vertexShader))
-        glDeleteShader(m_vertexShader);
-}
-
 void LifeProgram::updateProjection()
 {
+    if (m_curProgram != m_frameBufProg)
+        return;
+
     glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 0,
                     sizeof(glm::mat4), glm::value_ptr(m_projectionMatrix));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
-        utils::log::printProgramLog(m_programID);
+        utils::log::printProgramLog(m_curProgram);
         throw GLException((format("Error while updating matricesUBO(m_projectionMatrix)! %s\n")
                            % gluErrorString(error)).str(),
                           program_log_file_name(),
@@ -166,13 +191,16 @@ void LifeProgram::updateProjection()
 
 void LifeProgram::updateModel()
 {
+    if (m_curProgram != m_frameBufProg)
+        return;
+
     glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4),
                     sizeof(glm::mat4), glm::value_ptr(m_modelMatrix));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
-        utils::log::printProgramLog(m_programID);
+        utils::log::printProgramLog(m_curProgram);
         throw GLException((format("Error while updating matricesUBO(m_modelMatrix)! %s\n")
                            % gluErrorString(error)).str(),
                           program_log_file_name(),
@@ -182,17 +210,38 @@ void LifeProgram::updateModel()
 
 void LifeProgram::updateView()
 {
+    if (m_curProgram != m_frameBufProg)
+        return;
+
     glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4),
                     sizeof(mat4), glm::value_ptr(m_viewMatrix));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
-        utils::log::printProgramLog(m_programID);
+        utils::log::printProgramLog(m_curProgram);
         throw GLException((format("Error while updating"
                                   " matricesUBO(m_viewMatrix)! %s\n")
                            % gluErrorString(error)).str(),
                           program_log_file_name(),
                           Category::INTERNAL_ERROR);
+    }
+}
+
+void LifeProgram::useScreenProgram()
+{
+    if (m_curProgram != m_screenProg) {
+        glUseProgram(m_screenProg);
+        m_curProgram = m_screenProg;
+        rebindUniforms();
+    }
+}
+
+void LifeProgram::useFramebufferProgram()
+{
+    if (m_curProgram != m_frameBufProg) {
+        glUseProgram(m_frameBufProg);
+        m_curProgram = m_frameBufProg;
+        rebindUniforms();
     }
 }

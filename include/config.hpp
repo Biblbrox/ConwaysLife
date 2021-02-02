@@ -10,7 +10,14 @@ public:
     template<class T>
     static void addVal(const std::string& key, T val)
     {
-        m_values.insert({key, val});
+        auto const res = m_values.insert({key, val});
+        if (!res.second)
+            res.first->second = val;
+    }
+
+    static bool hasKey(const std::string& key)
+    {
+        return m_values.contains(key);
     }
 
     template<class T>

@@ -39,6 +39,9 @@ public:
     void updateView() override;
     void updateModel() override;
 
+    void useScreenProgram();
+    void useFramebufferProgram();
+
     /**
      * Init programs
      */
@@ -47,11 +50,12 @@ public:
 private:
     glm::vec4 m_color;
 
+    GLuint m_frameBufProg;
+    GLuint m_screenProg;
+    GLuint m_curProgram;
+
     GLint m_texLoc;
     GLint m_colorLoc;
-
-    GLuint m_vertexShader = 0;
-    GLuint m_fragmentShader = 0;
 
     GLuint m_matricesUBO;
     GLuint m_textureDataUBO;
@@ -62,7 +66,6 @@ private:
      * Utility cleanup functions
      */
     void remove_programs();
-    void remove_shaders();
     void free_buffers();
 };
 

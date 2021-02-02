@@ -19,12 +19,12 @@
 static bool imgInit = false;
 static bool mixerInit = false;
 
-SDL_Window* m_window;
-SDL_GLContext m_glcontext;
-
 static bool isRun = true;
 static GameStates state = GameStates::NORMAL;
 static GameStates prevState = GameStates::NORMAL;
+
+SDL_Window* Game::m_window = nullptr;
+SDL_GLContext Game::m_glcontext = nullptr;
 
 using utils::log::Logger;
 using utils::log::Category;
@@ -33,14 +33,14 @@ using boost::format;
 
 void quit()
 {
-    if (m_glcontext)
-        SDL_GL_DeleteContext(m_glcontext);
+    if (Game::getGLContext())
+        SDL_GL_DeleteContext(Game::getGLContext());
     if (TTF_WasInit())
         TTF_Quit();
     if (imgInit)
         IMG_Quit();
-    if (m_window)
-        SDL_DestroyWindow(m_window);
+    if (Game::getWindow())
+        SDL_DestroyWindow(Game::getWindow());
     if (mixerInit)
         Mix_Quit();
 
@@ -122,19 +122,21 @@ void Game::initOnceSDL2()
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
-//    SDL_ShowCursor(SDL_DISABLE);
-//    if (SDL_ShowCursor(SDL_QUERY) != SDL_DISABLE)
-//        Logger::write(program_log_file_name(), Category::INITIALIZATION_ERROR,
-//                      (format("Warning: Unable to hide cursor. "
-//                              "SDL Error: %s\n")
-//                       % SDL_GetError()).str());
+    SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0");
+
+    SDL_ShowCursor(SDL_ENABLE);
+    if (SDL_ShowCursor(SDL_QUERY) != SDL_ENABLE)
+        Logger::write(program_log_file_name(), Category::INITIALIZATION_ERROR,
+                      (format("Warning: Unable to show cursor. "
+                              "SDL Error: %s\n")
+                       % SDL_GetError()).str());
 }
 
 
 Game::Game() : vsync_supported(false)
 {
-    m_glcontext = nullptr;
-    m_window = nullptr;
+    Game::m_glcontext = nullptr;
+    Game::m_window = nullptr;
 }
 
 void Game::update(size_t delta)
@@ -149,10 +151,10 @@ void Game::update(size_t delta)
 
 void Game::initGL()
 {
-    m_screenWidth = utils::getScreenWidth<GLuint>();
-    m_screenHeight = utils::getScreenHeight<GLuint>();
+    m_screenWidth = utils::getDisplayWidth<GLuint>();
+    m_screenHeight = utils::getDisplayHeight<GLuint>();
 
-    m_window = SDL_CreateWindow(GAME_NAME.c_str(),
+    Game::m_window = SDL_CreateWindow(GAME_NAME.c_str(),
                                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                 m_screenWidth, m_screenHeight,
                                 WINDOW_FLAGS);
@@ -162,9 +164,9 @@ void Game::initGL()
                            program_log_file_name(),
                            Category::INITIALIZATION_ERROR);
 
-    m_glcontext = SDL_GL_CreateContext(m_window);
+    Game::m_glcontext = SDL_GL_CreateContext(Game::m_window);
     // Init OpenGL context
-    if (!m_glcontext)
+    if (!Game::m_glcontext)
         throw SdlException((format("Unable to create gl context. Error: %1%\n")
                             % SDL_GetError()).str(),
                            program_log_file_name(),
@@ -221,7 +223,7 @@ void Game::initGL()
 void Game::flush()
 {
     glFlush();
-    SDL_GL_SwapWindow(m_window);
+    SDL_GL_SwapWindow(Game::m_window);
 }
 
 void Game::initGame()
@@ -233,4 +235,3 @@ Game::~Game()
 {
 
 }
-

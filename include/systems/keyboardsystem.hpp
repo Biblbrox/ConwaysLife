@@ -6,7 +6,12 @@
 
 class KeyboardSystem : public System<KeyboardComponent>
 {
+public:
+    explicit KeyboardSystem();
+private:
     void update_state(size_t delta) override;
+
+    bool m_middlePressed;
 };
 
 #endif //MOONLANDER_KEYBOARDSYSTEM_HPP
