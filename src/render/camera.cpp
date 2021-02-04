@@ -2,6 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <iostream>
 
 #include "render/camera.hpp"
 
@@ -67,6 +68,7 @@ void Camera::processMovement(GLfloat xoffset, GLfloat yoffset,
 {
     xoffset *= m_mouseSens;
     yoffset *= m_mouseSens;
+
 
     m_yaw += xoffset;
     m_pitch += yoffset;

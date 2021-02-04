@@ -1,9 +1,9 @@
 #include <boost/format.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui_impl_sdl.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
-#include <imgui_internal.h>
 #include <iostream>
 
 #include "systems/renderersystem.hpp"
@@ -34,75 +34,10 @@ void RendererSystem::drawLevel()
                           program_log_file_name(), Category::INTERNAL_ERROR);
 }
 
-void RendererSystem::drawGui()
-{
-    auto program = LifeProgram::getInstance();
-    // Render texture to window
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-    program->useScreenProgram();
-
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(Game::getWindow());
-    ImGui::NewFrame();
-
-    GLfloat screen_width = utils::getWindowWidth<GLfloat>(*Game::getWindow());
-    GLfloat screen_height = utils::getWindowHeight<GLfloat>(*Game::getWindow());
-    ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowSize({static_cast<float>(screen_width),
-                              static_cast<float>(screen_height)});
-    bool open = true;
-    GLfloat pad = 10;
-    ImGui::Begin("GameWindow", &open, ImGuiWindowFlags_NoResize
-                                      | ImGuiWindowFlags_NoScrollbar
-                                      | ImGuiWindowFlags_NoScrollWithMouse
-                                      | ImGuiWindowFlags_NoTitleBar);
-    {
-        ImGui::BeginTable("table1", 2, ImGuiTableFlags_Borders
-                                       | ImGuiTableFlags_Resizable
-                                       | ImGuiTableFlags_NoHostExtendX
-                                       | ImGuiTableFlags_NoHostExtendY, {0, -1});
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-//            ImGui::Separator();
-            ImGui::Text("Visuals");
-//            ImGui::Separator();
-
-            bool some;
-            ImGui::Checkbox("Enable Visuals", &some);
-            ImGui::Checkbox("Chams", &some);
-            ImGui::Checkbox("Skeleton", &some);
-            ImGui::Checkbox("Box", &some);
-
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("Render");
-            auto size = ImGui::GetContentRegionAvail();
-            std::cout << "Image x: " << size.x << ", y: " << size.y << "\n";
-            ImGui::Image((ImTextureID)m_frameBufTex, size, {0, 1}, {1, 0});
-        }
-        ImGui::EndTable();
-    }
-    ImGui::End();
-
-    ImGui::Render();
-//            ImGui::UpdatePlatformWindows();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
 void RendererSystem::drawSprites()
 {
     auto sprites = getEntitiesByTag<SpriteComponent>();
     auto program = LifeProgram::getInstance();
-    // Render to texture
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-    glClearColor(0.2f, 0.0f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    program->useFramebufferProgram();
     for (const auto& [key, en]: sprites) {
         std::shared_ptr<CellComponent> cell;
         if ((cell = en->getComponent<CellComponent>()))
@@ -134,23 +69,7 @@ void RendererSystem::drawText()
 
 void RendererSystem::update_state(size_t delta)
 {
-    auto program = LifeProgram::getInstance();
-    program->useFramebufferProgram();
-
-    int screen_width = utils::getDisplayWidth<int>();
-    int screen_height = utils::getDisplayHeight<int>();
-
-    auto camera = Camera::getInstance();
-    glViewport(0.f, 0.f, screen_width, screen_height);
-    program->setProjection(camera->getProjection(screen_width,
-                                                screen_height));
-    program->updateProjection();
-
-    drawLevel();
-    drawSprites();
-    drawText();
-
-    program->useScreenProgram();
+    drawToFramebuffer();
     drawGui();
 }
 
@@ -201,6 +120,8 @@ RendererSystem::RendererSystem() : m_frameBuffer(0)
 
     int screen_width = utils::getWindowWidth<GLuint>(*Game::getWindow());
     int screen_height = utils::getWindowHeight<GLuint>(*Game::getWindow());
+    m_aspectRatio = static_cast<GLfloat>(screen_width) / screen_height;
+
     glGenFramebuffers(1, &m_frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
     m_frameBufTex = genFramebufferText(screen_width, screen_height);
@@ -220,4 +141,121 @@ RendererSystem::RendererSystem() : m_frameBuffer(0)
 RendererSystem::~RendererSystem()
 {
     glDeleteFramebuffers(1, &m_frameBuffer);
+}
+
+void RendererSystem::drawToFramebuffer()
+{
+    auto program = LifeProgram::getInstance();
+    program->useFramebufferProgram();
+
+    int screen_width = utils::getDisplayWidth<int>();
+    int screen_height = utils::getDisplayHeight<int>();
+
+    auto camera = Camera::getInstance();
+    int fieldSize = Config::getVal<int>("FieldSize");
+    int pad = 10; // TODO: fix camera pos while changing field size
+//    camera->setPos({fieldSize + pad, fieldSize + pad, fieldSize + pad});
+//    program->setView(camera->getView());
+//    program->updateView();
+    glViewport(0.f, 0.f, screen_width, screen_height);
+    program->setProjection(camera->getProjection(screen_width,
+                                                 screen_height));
+    program->updateProjection();
+
+    // Render to texture
+    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+    glm::vec4 color = Config::getVal<glm::vec4>("BackgroundColor");
+    glClearColor(color.x, color.y, color.z, color.w);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    drawLevel();
+    drawSprites();
+    drawText();
+}
+
+void RendererSystem::drawGui()
+{
+    auto program = LifeProgram::getInstance();
+    // Render texture to window
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    program->useScreenProgram();
+
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(Game::getWindow());
+    ImGui::NewFrame();
+
+    auto screen_width = utils::getWindowWidth<GLfloat>(*Game::getWindow());
+    auto screen_height = utils::getWindowHeight<GLfloat>(*Game::getWindow());
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize({static_cast<float>(screen_width),
+                              static_cast<float>(screen_height)});
+    bool open = true;
+    GLfloat pad = 10;
+    ImGui::Begin("GameWindow", &open, ImGuiWindowFlags_NoResize
+                                      | ImGuiWindowFlags_NoScrollbar
+                                      | ImGuiWindowFlags_NoScrollWithMouse
+                                      | ImGuiWindowFlags_NoTitleBar);
+    {
+        ImGui::BeginTable("table1", 2, ImGuiTableFlags_Borders
+                                       | ImGuiTableFlags_Resizable
+                                       | ImGuiTableFlags_NoHostExtendX
+                                       | ImGuiTableFlags_NoHostExtendY, {0, -1});
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Settings");
+            ImGui::Separator();
+
+            bool some;
+            ImGui::Text("Field size: ");
+            ImGui::SameLine();
+            ImGui::InputInt("##field_size", &Config::getVal<int>("FieldSize"));
+
+            ImGui::Text("Neighbours count to live");
+            ImGui::SameLine();
+            ImGui::InputInt("##neir_count", &Config::getVal<int>("NeirCount"));
+
+            ImGui::Text("Step time");
+            ImGui::SameLine();
+            ImGui::InputFloat("##step_time", &Config::getVal<GLfloat>("StepTime"));
+
+            ImGui::Separator();
+            ImGui::ColorPicker4("Background color", glm::value_ptr(
+                    Config::getVal<glm::vec4>("BackgroundColor")));
+            ImGui::Separator();
+
+            if (ImGui::Button("Start simulation"))
+                setGameState(GameStates::PLAY);
+
+            if (ImGui::Button("Pause simulation"))
+                setGameState(GameStates::PAUSE);
+
+            if (ImGui::Button("Stop simulation"))
+                setGameState(GameStates::STOP);
+
+            ImGui::Checkbox("Enable Visuals", &some);
+            ImGui::Checkbox("Chams", &some);
+            ImGui::Checkbox("Skeleton", &some);
+            ImGui::Checkbox("Box", &some);
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("Render");
+            auto size = ImGui::GetContentRegionAvail();
+            GLfloat image_height = size.x / m_aspectRatio;
+            size.y = image_height;
+            if (getGameState() != GameStates::STOP)
+                ImGui::Image((ImTextureID)m_frameBufTex, size, {0, 1}, {1, 0});
+        }
+        ImGui::EndTable();
+    }
+    ImGui::End();
+
+    ImGui::Render();
+//            ImGui::UpdatePlatformWindows();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

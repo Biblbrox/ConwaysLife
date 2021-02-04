@@ -20,8 +20,8 @@ static bool imgInit = false;
 static bool mixerInit = false;
 
 static bool isRun = true;
-static GameStates state = GameStates::NORMAL;
-static GameStates prevState = GameStates::NORMAL;
+static GameStates state = GameStates::STOP;
+static GameStates prevState = GameStates::STOP;
 
 SDL_Window* Game::m_window = nullptr;
 SDL_GLContext Game::m_glcontext = nullptr;
@@ -141,11 +141,6 @@ Game::Game() : vsync_supported(false)
 
 void Game::update(size_t delta)
 {
-    if (getGameState() == GameStates::NEED_REPLAY) {
-        m_world.init(); // Reinit world
-        setGameState(GameStates::NORMAL);
-    }
-
     m_world.update(delta);
 }
 

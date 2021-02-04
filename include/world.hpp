@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <SDL_ttf.h>
+#include <boost/multi_array.hpp>
 
 #include "utils/fps.hpp"
 #include "utils/timer.hpp"
@@ -23,27 +24,21 @@ class Component;
 
 using utils::type_id;
 
-inline constexpr size_t mapSize = 6;
+typedef boost::multi_array<std::shared_ptr<Entity>, 3> Field;
+typedef boost::multi_array<bool, 3> FieldState;
+typedef Field::index CellIndex;
 
 class World: public CesManager
 {
 public:
-    World() : m_scaled(false), m_wasInit(false) {};
+    World();
     ~World();
 
     void init() override;
     void update(size_t delta) override;
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<Entity>> m_nonStatic;
-    Camera m_camera;
-    GLuint m_screenHeight;
-    GLuint m_screenWidth;
-    GLfloat m_frameHeight;
-    GLfloat m_frameWidth;
-
     utils::Timer m_timer;
-
     utils::Fps m_fps;
 
     void update_text();
@@ -63,8 +58,12 @@ private:
     const GLfloat m_scaleFactor = 1.5f;
     utils::audio::Audio m_audio;
 
-    std::array<std::array<std::array<std::shared_ptr<Entity>,
-            mapSize>, mapSize>, mapSize> m_cells;
+
+//    std::vector<std::vector<std::vector<std::shared_ptr<Entity>>>> m_cells;
+
+    Field m_cells;
+//    std::array<std::array<std::array<std::shared_ptr<Entity>,
+//            mapSize>, mapSize>, mapSize> m_cells;
 
     bool m_wasInit;
 };

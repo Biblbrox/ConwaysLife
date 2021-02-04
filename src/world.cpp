@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_opengl3.h>
+#include <iostream>
 
 #include "base.hpp"
 #include "world.hpp"
@@ -41,8 +42,6 @@ const SDL_Color fontColor = {0xFF, 0xFF, 0xFF, 0xFF};
 
 const GLfloat cubeSize = 20.f;
 
-//const char*
-
 void World::update_text()
 {
 //    if constexpr (debug) {
@@ -52,17 +51,65 @@ void World::update_text()
 //    }
 }
 
+World::World() : m_scaled(false), m_wasInit(false),
+                 m_cells(boost::extents[6][6][6])
+{
+    Config::addVal("FieldSize", 6);
+    Config::addVal("StepTime", 5.f);
+    Config::addVal("NeirCount", 3);
+    Config::addVal("BackgroundColor", glm::vec4(0.2f, 0.f, 0.2f, 1.f));
+}
+
+World::~World()
+{
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+}
+
 void World::update(size_t delta)
 {
     if constexpr (debug)
         m_fps.update();
 
     update_text();
-    GLfloat stepTime = 1.f;
-    if (m_timer.getTicks() / 1000.f > stepTime) {
+    if (getGameState() == GameStates::PAUSE
+        && !m_timer.isPaused()) {
+        m_timer.pause();
+        std::cout << "Timer paused" << std::endl;
+    }
+
+    if (getGameState() == GameStates::STOP
+        && getPrevGameState() != GameStates::STOP) {
+        setGameState(GameStates::STOP);
         m_timer.stop();
+        std::cout << "Timer stopped" << std::endl;
+    }
+
+    if (getGameState() == GameStates::PLAY
+        && getPrevGameState() == GameStates::PAUSE) {
+        setGameState(GameStates::PLAY);
+        m_timer.unpause();
+        std::cout << "Timer unpaused" << std::endl;
+    }
+
+    if (getGameState() == GameStates::PLAY
+        && getPrevGameState() == GameStates::STOP) {
+        setGameState(GameStates::PLAY);
         m_timer.start();
-        update_field();
+        // reinit field
+        init_field();
+        std::cout << "Timer started" << std::endl;
+    }
+
+    if (getGameState() == GameStates::PLAY) {
+        GLfloat stepTime = Config::getVal<GLfloat>("StepTime");
+        if (m_timer.getTicks() / 1000.f > stepTime) {
+            m_timer.stop();
+            m_timer.start();
+            update_field();
+            std::cout << "Field updated" << std::endl;
+        }
     }
 
     filter_entities();
@@ -91,10 +138,10 @@ void World::init()
 
     }
 
-    if (m_timer.isStarted() || m_timer.isPaused())
-        m_timer.stop();
-
-    m_timer.start();
+//    if (m_timer.isStarted() || m_timer.isPaused())
+//        m_timer.stop();
+//
+//    m_timer.start();
 }
 
 void World::init_sound()
@@ -104,15 +151,16 @@ void World::init_sound()
 
 void World::update_field()
 {
-    std::array<std::array<std::array<bool, mapSize>, mapSize>, mapSize> new_state;
-    for (size_t i = 0; i < mapSize; ++i) {
-        for (size_t j = 0; j < mapSize; ++j) {
-            for (size_t k = 0; k < mapSize; ++k) {
+    GLuint fieldSize = Config::getVal<int>("FieldSize");
+    FieldState new_state(boost::extents[fieldSize][fieldSize][fieldSize]);
+    for (CellIndex i = 0; i < fieldSize; ++i) {
+        for (CellIndex j = 0; j < fieldSize; ++j) {
+            for (CellIndex k = 0; k < fieldSize; ++k) {
                 auto cell = m_cells[i][j][k];
                 auto cellComp = cell->getComponent<CellComponent>();
                 size_t neirCount = 0;
                 bool hasUp =
-                        (j != mapSize - 1) ?
+                        (j != fieldSize - 1) ?
                         m_cells[i][j + 1][k]->getComponent<CellComponent>()->alive : false;
                 if (hasUp)
                     ++neirCount;
@@ -127,12 +175,12 @@ void World::update_field()
                 if (hasLeft)
                     ++neirCount;
                 bool hasRight =
-                        (i != mapSize - 1) ?
+                        (i != fieldSize - 1) ?
                         m_cells[i + 1][j][k]->getComponent<CellComponent>()->alive : false;
                 if (hasRight)
                     ++neirCount;
                 bool hasForward =
-                        (k != mapSize - 1) ?
+                        (k != fieldSize - 1) ?
                         m_cells[i][j][k + 1]->getComponent<CellComponent>()->alive : false;
                 if (hasForward)
                     ++neirCount;
@@ -142,22 +190,22 @@ void World::update_field()
                 if (hasBack)
                     ++neirCount;
                 bool hasUpCor1 =
-                        (i != 0 && k != 0 && j != mapSize - 1) ?
+                        (i != 0 && k != 0 && j != fieldSize - 1) ?
                         m_cells[i - 1][j + 1][k - 1]->getComponent<CellComponent>()->alive : false;
                 if (hasUpCor1)
                     ++neirCount;
                 bool hasUpCor2 =
-                        (i != mapSize - 1 && k != 0 && j != mapSize - 1) ?
+                        (i != fieldSize - 1 && k != 0 && j != fieldSize - 1) ?
                         m_cells[i + 1][j + 1][k - 1]->getComponent<CellComponent>()->alive : false;
                 if (hasUpCor2)
                     ++neirCount;
                 bool hasUpCor3 =
-                        (i != mapSize - 1 && k != mapSize - 1 && j != mapSize - 1) ?
+                        (i != fieldSize - 1 && k != fieldSize - 1 && j != fieldSize - 1) ?
                         m_cells[i + 1][j + 1][k + 1]->getComponent<CellComponent>()->alive : false;
                 if (hasUpCor3)
                     ++neirCount;
                 bool hasUpCor4 =
-                        (i != 0 && k != mapSize - 1 && j != mapSize - 1) ?
+                        (i != 0 && k != fieldSize - 1 && j != fieldSize - 1) ?
                         m_cells[i - 1][j + 1][k + 1]->getComponent<CellComponent>()->alive : false;
                 if (hasUpCor4)
                     ++neirCount;
@@ -167,23 +215,23 @@ void World::update_field()
                 if (hasDownCor1)
                     ++neirCount;
                 bool hasDownCor2 =
-                        (i != mapSize - 1 && k != 0 && j != 0) ?
+                        (i != fieldSize - 1 && k != 0 && j != 0) ?
                         m_cells[i + 1][j - 1][k - 1]->getComponent<CellComponent>()->alive : false;
                 if (hasDownCor2)
                     ++neirCount;
                 bool hasDownCor3 =
-                        (i != mapSize - 1 && k != mapSize - 1 && j != 0) ?
+                        (i != fieldSize - 1 && k != fieldSize - 1 && j != 0) ?
                         m_cells[i + 1][j - 1][k + 1]->getComponent<CellComponent>()->alive : false;
                 if (hasDownCor3)
                     ++neirCount;
                 bool hasDownCor4 =
-                        (i != 0 && k != mapSize - 1 && j != 0) ?
+                        (i != 0 && k != fieldSize - 1 && j != 0) ?
                         m_cells[i - 1][j - 1][k + 1]->getComponent<CellComponent>()->alive : false;
                 if (hasDownCor4)
                     ++neirCount;
 
                 if (!cellComp->alive) {
-                    if (neirCount == 9)
+                    if (neirCount == Config::getVal<int>("NeirCount"))
                         new_state[i][j][k] = true;
 
                     continue;
@@ -198,9 +246,9 @@ void World::update_field()
         }
     }
 
-    for (size_t i = 0; i < mapSize; ++i) {
-        for (size_t j = 0; j < mapSize; ++j) {
-            for (size_t k = 0; k < mapSize; ++k) {
+    for (size_t i = 0; i < fieldSize; ++i) {
+        for (size_t j = 0; j < fieldSize; ++j) {
+            for (size_t k = 0; k < fieldSize; ++k) {
                 m_cells[i][j][k]->getComponent<CellComponent>()->alive
                         = new_state[i][j][k];
             }
@@ -247,17 +295,28 @@ TTF_Font* World::open_font(const std::string& fontName, size_t fontSize)
 
 void World::init_field()
 {
+    GLuint fieldSize = Config::getVal<int>("FieldSize");
+
     const std::vector<std::array<size_t, 3>> initial_cells = {
-            {mapSize / 2, mapSize / 2, mapSize / 2}
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 1, 0},
+            {0, 1, 1},
+            {1, 0, 0},
+            {1, 0, 1}
+//            {fieldSize / 2, fieldSize / 2, fieldSize / 2}
     };
 
     GLfloat init_x = -1.f;
     GLfloat init_y = -1.f;
     GLfloat init_z = -1.f;
 
-    for (size_t i = 0; i < mapSize; ++i) {
-        for (size_t j = 0; j < mapSize; ++j) {
-            for (size_t k = 0; k < mapSize; ++k) {
+    m_cells.resize(boost::extents[0][0][0]); // clear array if reinit
+    m_cells.resize(boost::extents[fieldSize][fieldSize][fieldSize]);
+
+    for (CellIndex i = 0; i < fieldSize; ++i) {
+        for (CellIndex j = 0; j < fieldSize; ++j) {
+            for (CellIndex k = 0; k < fieldSize; ++k) {
                 auto cell = createEntity("cell" + std::to_string(i)
                                          + std::to_string(j)
                                          + std::to_string(k));
@@ -278,7 +337,8 @@ void World::init_field()
 
                 auto cellComp = cell->getComponent<CellComponent>();
                 if (std::count(initial_cells.cbegin(),
-                               initial_cells.cend(), std::array<size_t, 3>{i, j, k}) != 0) {
+                               initial_cells.cend(),
+                               std::array<size_t, 3>{(size_t)i, (size_t)j, (size_t)k}) != 0) {
                     cellComp->alive = true;
                 } else {
                     cellComp->alive = false;
@@ -286,14 +346,4 @@ void World::init_field()
             }
         }
     }
-
-//    Config::addVal("")
-
-}
-
-World::~World()
-{
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
 }

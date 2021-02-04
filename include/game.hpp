@@ -9,11 +9,11 @@
 #define WINDOW_FLAGS (SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)
 #define IMG_FLAGS IMG_INIT_PNG
 
-enum class GameStates {
-    NORMAL,
-    WIN,
-    FAIL,
-    NEED_REPLAY
+enum class GameStates
+{
+    PLAY,
+    PAUSE,
+    STOP
 };
 
 void quit();
@@ -22,6 +22,7 @@ bool isGameRunnable();
 void setGameState(GameStates state);
 GameStates getGameState();
 GameStates getPrevGameState();
+
 class Game
 {
 public:

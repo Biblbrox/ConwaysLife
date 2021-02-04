@@ -1,5 +1,5 @@
-#ifndef MOONLANDER_RENDERERSYSTEM_HPP
-#define MOONLANDER_RENDERERSYSTEM_HPP
+#ifndef RENDERERSYSTEM_HPP
+#define RENDERERSYSTEM_HPP
 
 #include <GL/glew.h>
 
@@ -20,12 +20,15 @@ public:
     void update_state(size_t delta) override;
 private:
     void drawSprites();
-    void drawGui();
     void drawLevel();
     void drawText();
+    void drawToFramebuffer();
 
     GLuint m_frameBuffer;
     GLuint m_frameBufTex;
+    GLfloat m_aspectRatio;
+
+    void drawGui();
 };
 
-#endif //MOONLANDER_RENDERERSYSTEM_HPP
+#endif //RENDERERSYSTEM_HPP

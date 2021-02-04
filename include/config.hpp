@@ -21,9 +21,9 @@ public:
     }
 
     template<class T>
-    static T getVal(const std::string& key)
+    static T& getVal(const std::string& key)
     {
-        return std::any_cast<T>(m_values[key]);
+        return std::any_cast<T&>(m_values[key]);
     }
 
 private:
