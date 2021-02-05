@@ -122,10 +122,10 @@ namespace utils
         return clips;
     }
 
-    constexpr GLfloat units(const GLfloat val)
-    {
-        return val * gl::unitSize;
-    }
+//    constexpr GLfloat units(const GLfloat val)
+//    {
+//        return val * gl::unitSize;
+//    }
 
     namespace physics
     {

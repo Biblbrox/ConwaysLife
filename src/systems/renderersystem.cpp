@@ -26,53 +26,6 @@ using glm::vec3;
 using glm::scale;
 using utils::math::operator/;
 
-void RendererSystem::drawLevel()
-{
-    if (GLenum error = glGetError(); error != GL_NO_ERROR)
-        throw GLException((format("\n\tRender while drawing level: %1%\n")
-                           % glewGetErrorString(error)).str(),
-                          program_log_file_name(), Category::INTERNAL_ERROR);
-}
-
-void RendererSystem::drawSprites()
-{
-    auto sprites = getEntitiesByTag<SpriteComponent>();
-    auto program = LifeProgram::getInstance();
-    for (const auto& [key, en]: sprites) {
-        std::shared_ptr<CellComponent> cell;
-        if ((cell = en->getComponent<CellComponent>()))
-            if (!cell->alive)
-                continue;
-
-        const glm::vec3 pos =
-                glm::vec3(en->getComponent<PositionComponent>()->x,
-                          en->getComponent<PositionComponent>()->y,
-                          en->getComponent<PositionComponent>()->z);
-        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite,
-                            pos, en->getComponent<PositionComponent>()->angle);
-    }
-
-    if (GLenum error = glGetError(); error != GL_NO_ERROR)
-        throw GLException((format("\n\tRender while drawing sprites: %1%\n")
-                           % glewGetErrorString(error)).str(),
-                          program_log_file_name(), Category::INTERNAL_ERROR);
-}
-
-void RendererSystem::drawText()
-{
-
-    if (GLenum error = glGetError(); error != GL_NO_ERROR)
-        throw GLException((format("\n\tRender while drawing level: %1%\n")
-                           % glewGetErrorString(error)).str(),
-                          program_log_file_name(), Category::INTERNAL_ERROR);
-}
-
-void RendererSystem::update_state(size_t delta)
-{
-    drawToFramebuffer();
-    drawGui();
-}
-
 static GLuint genFramebufferText(GLuint width, GLuint height)
 {
     GLuint texture;
@@ -99,7 +52,7 @@ static GLuint genRbo(GLuint width, GLuint height)
     return rbo;
 }
 
-RendererSystem::RendererSystem() : m_frameBuffer(0)
+RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -136,11 +89,51 @@ RendererSystem::RendererSystem() : m_frameBuffer(0)
                 "GL Error: %s\n") % gluErrorString(glGetError())).str(),
                           program_log_file_name(), Category::INITIALIZATION_ERROR);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    auto camera = Camera::getInstance();
+    GLfloat cubSize = 20.f;
+    int fieldSize = Config::getVal<int>("FieldSize") * (cubSize + 10);
+    camera->setPos({fieldSize, fieldSize, fieldSize});
+    camera->updateView();
+    auto program = LifeProgram::getInstance();
+    program->useFramebufferProgram();
+    program->setView(camera->getView());
+    program->updateView();
 }
 
 RendererSystem::~RendererSystem()
 {
     glDeleteFramebuffers(1, &m_frameBuffer);
+}
+
+void RendererSystem::drawSprites()
+{
+    auto sprites = getEntitiesByTag<SpriteComponent>();
+    auto program = LifeProgram::getInstance();
+    for (const auto& [key, en]: sprites) {
+        std::shared_ptr<CellComponent> cell;
+        if ((cell = en->getComponent<CellComponent>()))
+            if (!cell->alive)
+                continue;
+
+        const glm::vec3 pos =
+                glm::vec3(en->getComponent<PositionComponent>()->x,
+                          en->getComponent<PositionComponent>()->y,
+                          en->getComponent<PositionComponent>()->z);
+        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite,
+                            pos, en->getComponent<PositionComponent>()->angle);
+    }
+
+    if (GLenum error = glGetError(); error != GL_NO_ERROR)
+        throw GLException((format("\n\tRender while drawing sprites: %1%\n")
+                           % glewGetErrorString(error)).str(),
+                          program_log_file_name(), Category::INTERNAL_ERROR);
+}
+
+void RendererSystem::update_state(size_t delta)
+{
+    drawToFramebuffer();
+    drawGui();
 }
 
 void RendererSystem::drawToFramebuffer()
@@ -152,11 +145,6 @@ void RendererSystem::drawToFramebuffer()
     int screen_height = utils::getDisplayHeight<int>();
 
     auto camera = Camera::getInstance();
-    int fieldSize = Config::getVal<int>("FieldSize");
-    int pad = 10; // TODO: fix camera pos while changing field size
-//    camera->setPos({fieldSize + pad, fieldSize + pad, fieldSize + pad});
-//    program->setView(camera->getView());
-//    program->updateView();
     glViewport(0.f, 0.f, screen_width, screen_height);
     program->setProjection(camera->getProjection(screen_width,
                                                  screen_height));
@@ -169,9 +157,7 @@ void RendererSystem::drawToFramebuffer()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    drawLevel();
     drawSprites();
-    drawText();
 }
 
 void RendererSystem::drawGui()
@@ -189,13 +175,26 @@ void RendererSystem::drawGui()
     ImGui_ImplSDL2_NewFrame(Game::getWindow());
     ImGui::NewFrame();
 
+    switch (Config::getVal<int>("Theme")) {
+        case 0:
+            ImGui::StyleColorsLight();
+            break;
+        case 1:
+            ImGui::StyleColorsClassic();
+            break;
+        case 2:
+            ImGui::StyleColorsDark();
+            break;
+        default:
+            break;
+    }
+
     auto screen_width = utils::getWindowWidth<GLfloat>(*Game::getWindow());
     auto screen_height = utils::getWindowHeight<GLfloat>(*Game::getWindow());
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize({static_cast<float>(screen_width),
                               static_cast<float>(screen_height)});
     bool open = true;
-    GLfloat pad = 10;
     ImGui::Begin("GameWindow", &open, ImGuiWindowFlags_NoResize
                                       | ImGuiWindowFlags_NoScrollbar
                                       | ImGuiWindowFlags_NoScrollWithMouse
@@ -220,9 +219,15 @@ void RendererSystem::drawGui()
             ImGui::SameLine();
             ImGui::InputInt("##neir_count", &Config::getVal<int>("NeirCount"));
 
+            ImGui::Text("Neighbours count to die");
+            ImGui::SameLine();
+            ImGui::InputInt("##neir_count_die", &Config::getVal<int>("NeirCountDie"));
+
             ImGui::Text("Step time");
             ImGui::SameLine();
             ImGui::InputFloat("##step_time", &Config::getVal<GLfloat>("StepTime"));
+
+            ImGui::Checkbox("Inverse rotation", &Config::getVal<bool>("InverseRotation"));
 
             ImGui::Separator();
             ImGui::ColorPicker4("Background color", glm::value_ptr(
@@ -238,10 +243,30 @@ void RendererSystem::drawGui()
             if (ImGui::Button("Stop simulation"))
                 setGameState(GameStates::STOP);
 
-            ImGui::Checkbox("Enable Visuals", &some);
-            ImGui::Checkbox("Chams", &some);
-            ImGui::Checkbox("Skeleton", &some);
-            ImGui::Checkbox("Box", &some);
+            if (ImGui::Button("Save simulation"))
+                ;
+
+            if (ImGui::Button("Load simulation"))
+                ;
+
+            if (ImGui::Button("Video settings")) {
+                m_videoSettingsOpen = true;
+            }
+
+            if (m_videoSettingsOpen) {
+                const char* items[] = {
+                        "Light",
+                        "Classic",
+                        "Dark"
+                };
+                ImGui::Begin("Video settings", &m_videoSettingsOpen);
+                ImGui::Checkbox("Enable antialiasing",
+                                &Config::getVal<bool>("Antialiasing"));
+                ImGui::Text("Application theme:");
+                ImGui::SameLine();
+                ImGui::ListBox("", &Config::getVal<int>("Theme"), items, 3);
+                ImGui::End();
+            }
 
             ImGui::TableSetColumnIndex(1);
             ImGui::Text("Render");

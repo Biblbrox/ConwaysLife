@@ -28,6 +28,8 @@ private:
     GLuint m_frameBufTex;
     GLfloat m_aspectRatio;
 
+    bool m_videoSettingsOpen;
+
     void drawGui();
 };
 

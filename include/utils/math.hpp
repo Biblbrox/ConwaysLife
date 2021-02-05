@@ -44,6 +44,11 @@ namespace utils::math {
         return res;
     }
 
+    template <typename T> constexpr int sgn(T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
+
     /**
      * Rotate world around point v
      * @param m

@@ -9,7 +9,6 @@
 using utils::log::Category;
 using utils::log::program_log_file_name;
 using utils::log::shader_log_file_name;
-using utils::units;
 using boost::format;
 
 Sprite::Sprite()
@@ -30,10 +29,10 @@ GLuint Sprite::addTexture(const std::string& objFile,
                                           nullptr, nullptr);
     m_textureIds.emplace_back(textureId);
 
-    utils::Rect rect{};
-    rect.w = units(textureWidth);
-    rect.h = units(textureHeight);
-    rect.d = units(textureDepth);
+    utils::Rect rect;
+    rect.w = textureWidth;
+    rect.h = textureHeight;
+    rect.d = textureDepth;
     m_sizes.emplace_back(rect);
 
     ++m_texCount;

@@ -23,6 +23,7 @@
 #include "utils/random.hpp"
 #include "exceptions/sdlexception.hpp"
 #include "exceptions/glexception.hpp"
+#include "lifeprogram.hpp"
 
 using utils::log::Logger;
 using utils::getResourcePath;
@@ -57,7 +58,11 @@ World::World() : m_scaled(false), m_wasInit(false),
     Config::addVal("FieldSize", 6);
     Config::addVal("StepTime", 5.f);
     Config::addVal("NeirCount", 3);
+    Config::addVal("NeirCountDie", 4);
     Config::addVal("BackgroundColor", glm::vec4(0.2f, 0.f, 0.2f, 1.f));
+    Config::addVal("InverseRotation", false);
+    Config::addVal("Antialiasing", false);
+    Config::addVal("Theme", 0);
 }
 
 World::~World()
@@ -240,7 +245,7 @@ void World::update_field()
                 if (neirCount == 0 || neirCount == 1)
                     new_state[i][j][k] = false;
 
-                if (neirCount >= 4)
+                if (neirCount >= Config::getVal<int>("NeirCountDie"))
                     new_state[i][j][k] = false;
             }
         }
@@ -299,17 +304,20 @@ void World::init_field()
 
     const std::vector<std::array<size_t, 3>> initial_cells = {
             {0, 0, 0},
-            {0, 0, 1},
-            {0, 1, 0},
-            {0, 1, 1},
             {1, 0, 0},
-            {1, 0, 1}
-//            {fieldSize / 2, fieldSize / 2, fieldSize / 2}
+            {2, 0, 0},
+            {3, 0, 0},
+            {0, 1, 0},
+            {0, 2, 0},
+            {0, 3, 0},
+            {0, 0, 1},
+            {0, 0, 2},
+            {0, 0, 3},
     };
 
-    GLfloat init_x = -1.f;
-    GLfloat init_y = -1.f;
-    GLfloat init_z = -1.f;
+    GLfloat init_x = 0.f;
+    GLfloat init_y = 0.f;
+    GLfloat init_z = 0.f;
 
     m_cells.resize(boost::extents[0][0][0]); // clear array if reinit
     m_cells.resize(boost::extents[fieldSize][fieldSize][fieldSize]);
@@ -324,9 +332,9 @@ void World::init_field()
                 cell->addComponents<SpriteComponent, CellComponent, PositionComponent>();
 
                 auto pos = cell->getComponent<PositionComponent>();
-                pos->x = init_x + 2.f * i;
-                pos->y = init_y + 2.f * j;
-                pos->z = init_z + 2.f * k;
+                pos->x = init_x + cubeSize * i;
+                pos->y = init_y + cubeSize * j;
+                pos->z = init_z + cubeSize * k;
 
                 auto sprite = cell->getComponent<SpriteComponent>();
                 sprite->sprite = make_shared<Sprite>();
@@ -346,4 +354,13 @@ void World::init_field()
             }
         }
     }
+
+    // TODO: fix bug
+    auto camera = Camera::getInstance();
+    GLfloat pos = fieldSize * (cubeSize + 40);
+    camera->setPos({pos, pos, pos});
+    camera->updateView();
+    auto program = LifeProgram::getInstance();
+    program->setView(camera->getView());
+    program->updateView();
 }

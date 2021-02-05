@@ -61,17 +61,20 @@ void render::drawDots(const std::vector<vec2>& dots)
 
 void
 render::drawTexture(ShaderProgram& program, const Texture &texture,
-                   const glm::vec3& pos, GLfloat angle)
+                   const glm::vec3& position, GLfloat angle)
 {
     assert(texture.getVAO() != 0);
 
-    const GLfloat half = texture.getWidth() / 2.f; // TODO: fix size
+    glm::vec3 pos = {2.f * position.x / texture.getWidth(),
+                     2.f * position.y / texture.getHeight(),
+                     2.f * position.z / texture.getDepth()};
+    const GLfloat half = 1.f;
     const GLfloat centerX = pos.x + half;
     const GLfloat centerY = pos.y + half;
     const GLfloat centerZ = pos.z + half;
 
     const glm::vec3 scale = glm::vec3(texture.getWidth(), texture.getHeight(),
-                                    texture.getDepth());
+                                      texture.getDepth());
 
     mat4 rotation = rotate_around(mat4(1.f), vec3(centerX, centerY, centerZ), angle);
     mat4 translation = translate(mat4(1.f), vec3(pos.x, pos.y, pos.z));
@@ -81,7 +84,6 @@ render::drawTexture(ShaderProgram& program, const Texture &texture,
 
     glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
     glBindVertexArray(texture.getVAO());
-    //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
     glDrawArrays(GL_TRIANGLES, 0, 180);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);

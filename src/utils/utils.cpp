@@ -125,6 +125,16 @@ std::vector<std::string> split(const std::string& str, const std::string& del)
 
 std::vector<GLfloat> utils::loadObj(const std::string& file, std::string& textureFile)
 {
+    // TODO: write more general cache
+    static std::vector<GLfloat> last_result;
+    static std::string last_file;
+    static std::string last_tex_file;
+
+    if (!last_result.empty() && last_file == file) {
+        textureFile = last_tex_file;
+        return last_result;
+    }
+
     if (!std::filesystem::exists(file))
         throw FSException((format("File %s doesn't exists") % file).str(),
                           program_log_file_name(),
@@ -183,7 +193,6 @@ std::vector<GLfloat> utils::loadObj(const std::string& file, std::string& textur
                           program_log_file_name(),
                           utils::log::Category::FILE_ERROR);
 
-
     std::ifstream mtl(utils::getResourcePath(mtlPath));
     while (std::getline(mtl, line)) {
         if (line.starts_with("map_Kd")) {
@@ -194,12 +203,21 @@ std::vector<GLfloat> utils::loadObj(const std::string& file, std::string& textur
     }
     mtl.close();
 
+    last_result = res;
+    last_file = file;
+    last_tex_file = textureFile;
+
     return res;
 }
 
 GLuint utils::loadTexture(const std::string& file,
                           GLuint* textureWidth, GLuint* textureHeight)
 {
+    static std::string old_file;
+    static GLuint old_texture;
+    if (!old_file.empty() && old_file == file)
+        return old_texture;
+
     SDL_Surface* surface = IMG_Load(file.c_str());
     if (!surface)
         throw SdlException((format("Unable to load image: %s"
@@ -225,6 +243,9 @@ GLuint utils::loadTexture(const std::string& file,
             tw, th, texture_format);
 
     SDL_FreeSurface(flipped);
+
+    old_file = file;
+    old_texture = textureId;
 
     return textureId;
 }

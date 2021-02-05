@@ -67,7 +67,7 @@ void KeyboardSystem::update_state(size_t delta)
         }
 
         if (m_middlePressed && !stopped) {
-            camera->processMovement(x_offset, y_offset, false);
+            camera->processMovement(x_offset, y_offset);
             program->setView(camera->getView());
             program->updateView();
         }

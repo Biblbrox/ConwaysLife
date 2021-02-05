@@ -1,16 +1,10 @@
 #include <SDL2/SDL.h>
-#include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
-#include <iostream>
 #include <boost/format.hpp>
 
 #include "game.hpp"
 #include "utils/logger.hpp"
 #include "exceptions/basegameexception.hpp"
-#include "exceptions/glexception.hpp"
 #include "lifeprogram.hpp"
-#include "config.hpp"
 
 #ifndef NDEBUG // use callgrind profiler
 #include <valgrind/callgrind.h>
@@ -34,13 +28,14 @@ int main(int argc, char *args[])
         Game game;
         game.initOnceSDL2();
         game.initGL();
+        auto program = LifeProgram::getInstance();
+        program->loadProgram();
         game.initGame();
         auto camera = Camera::getInstance();
 
         int screen_width = utils::getWindowWidth<int>(*Game::getWindow());
         int screen_height = utils::getWindowHeight<int>(*Game::getWindow());
-        auto program = LifeProgram::getInstance();
-        program->loadProgram();
+        program->useFramebufferProgram();
         glm::mat4 perspective = camera->getProjection(screen_width, screen_height);
         program->setProjection(perspective);
         program->setModel(glm::mat4(1.f));
@@ -50,7 +45,6 @@ int main(int argc, char *args[])
         program->updateProjection();
         program->setTexture(0);
 
-        SDL_Event e;
         GLfloat delta_time = 0.f;
         GLfloat last_frame = 0.f;
 
@@ -59,13 +53,7 @@ int main(int argc, char *args[])
         CALLGRIND_TOGGLE_COLLECT;
 #endif
 
-        program->useFramebufferProgram();
-        camera->setPos({0.f, 0.f, -40});
-        program->setView(camera->getView());
-        program->updateView();
-        bool middle_pressed = false;
         bool firstRun = true;
-
         while (isGameRunnable()) {
             GLfloat cur_time = SDL_GetTicks();
             delta_time = cur_time - last_frame;
