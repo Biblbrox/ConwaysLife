@@ -24,8 +24,12 @@ private:
     void drawText();
     void drawToFramebuffer();
 
+    GLuint m_frameBufferMSAA;
     GLuint m_frameBuffer;
+
     GLuint m_frameBufTex;
+    GLuint m_frameBufTexMSAA;
+
     GLfloat m_aspectRatio;
 
     bool m_videoSettingsOpen;

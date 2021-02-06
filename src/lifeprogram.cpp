@@ -7,7 +7,6 @@
 #include "utils/logger.hpp"
 #include "lifeprogram.hpp"
 
-using utils::getShaderPath;
 using utils::loadShaderFromFile;
 using glm::mat4;
 using glm::vec3;

@@ -5,6 +5,7 @@
 
 #include "exceptions/sdlexception.hpp"
 #include "render/sprite.hpp"
+#include "utils/texture.hpp"
 
 using utils::log::Category;
 using utils::log::program_log_file_name;
@@ -22,10 +23,12 @@ GLuint Sprite::addTexture(const std::string& objFile,
                           GLfloat textureWidth, GLfloat textureHeight,
                           GLfloat textureDepth)
 {
-    std::string textureFile;
-    m_vertices.emplace_back(utils::loadObj(objFile, textureFile));
+    using namespace utils::texture;
 
-    GLuint textureId = utils::loadTexture(utils::getResourcePath(textureFile),
+    std::string textureFile;
+    m_vertices.emplace_back(loadObj(objFile, textureFile));
+
+    GLuint textureId = loadTexture(getResourcePath(textureFile),
                                           nullptr, nullptr);
     m_textureIds.emplace_back(textureId);
 

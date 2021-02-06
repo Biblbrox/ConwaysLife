@@ -5,6 +5,7 @@
 #include "utils/logger.hpp"
 #include "exceptions/basegameexception.hpp"
 #include "lifeprogram.hpp"
+#include "config.hpp"
 
 #ifndef NDEBUG // use callgrind profiler
 #include <valgrind/callgrind.h>
@@ -13,18 +14,17 @@
 using utils::log::program_log_file_name;
 using utils::log::Category;
 
-void updateWindowSize(int& width, int& height)
-{
-    glm::vec<2, int> size = utils::getWindowSize<int>(*Game::getWindow());
-
-    width = size.x;
-    height = size.y;
-}
-
 int main(int argc, char *args[])
 {
+#ifndef NDEBUG
+    CALLGRIND_START_INSTRUMENTATION;
+    CALLGRIND_TOGGLE_COLLECT;
+#endif
+
     int ret_code = 0;
     try {
+        Config::load("config.txt");
+        Config::addVal("ConfigFile", "config.txt", "const char*");
         Game game;
         game.initOnceSDL2();
         game.initGL();
@@ -48,11 +48,6 @@ int main(int argc, char *args[])
         GLfloat delta_time = 0.f;
         GLfloat last_frame = 0.f;
 
-#ifndef NDEBUG
-        CALLGRIND_START_INSTRUMENTATION;
-        CALLGRIND_TOGGLE_COLLECT;
-#endif
-
         bool firstRun = true;
         while (isGameRunnable()) {
             GLfloat cur_time = SDL_GetTicks();
@@ -73,7 +68,6 @@ int main(int argc, char *args[])
                                                % SDL_GetError()).str());
                 firstRun = false;
             }
-            // End render logic
         }
     } catch (const BaseGameException& e) {
         utils::log::Logger::write(e.fileLog(), e.categoryError(), e.what());
@@ -85,7 +79,7 @@ int main(int argc, char *args[])
     }
     quit();
 
-#ifndef NDEBUGp
+#ifndef NDEBUG
     CALLGRIND_TOGGLE_COLLECT;
     CALLGRIND_STOP_INSTRUMENTATION;
 #endif

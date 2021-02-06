@@ -26,7 +26,6 @@
 #include "lifeprogram.hpp"
 
 using utils::log::Logger;
-using utils::getResourcePath;
 using utils::log::program_log_file_name;
 using boost::format;
 using utils::physics::altitude;
@@ -55,14 +54,14 @@ void World::update_text()
 World::World() : m_scaled(false), m_wasInit(false),
                  m_cells(boost::extents[6][6][6])
 {
-    Config::addVal("FieldSize", 6);
-    Config::addVal("StepTime", 5.f);
-    Config::addVal("NeirCount", 3);
-    Config::addVal("NeirCountDie", 4);
-    Config::addVal("BackgroundColor", glm::vec4(0.2f, 0.f, 0.2f, 1.f));
-    Config::addVal("InverseRotation", false);
-    Config::addVal("Antialiasing", false);
-    Config::addVal("Theme", 0);
+//    Config::addVal("FieldSize", 6, "int");
+//    Config::addVal("StepTime", 5.f, "float");
+//    Config::addVal("NeirCount", 3, "int");
+//    Config::addVal("NeirCountDie", 4, "int");
+//    Config::addVal("BackgroundColor", glm::vec4(0.2f, 0.f, 0.2f, 1.f), "vec4");
+//    Config::addVal("InverseRotation", false, "bool");
+//    Config::addVal("MSAA", false, "bool");
+//    Config::addVal("Theme", 0, "int");
 }
 
 World::~World()
@@ -338,7 +337,7 @@ void World::init_field()
 
                 auto sprite = cell->getComponent<SpriteComponent>();
                 sprite->sprite = make_shared<Sprite>();
-                sprite->sprite->addTexture(utils::getResourcePath("cube.obj"), cubeSize,
+                sprite->sprite->addTexture(getResourcePath("cube.obj"), cubeSize,
                                            cubeSize, cubeSize);
                 sprite->sprite->generateDataBuffer();
                 m_cells[i][j][k] = cell;

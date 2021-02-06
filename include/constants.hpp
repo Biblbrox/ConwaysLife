@@ -8,8 +8,24 @@ const std::string SHADER_PATH = "../src/shaders/";
 
 const std::string GAME_NAME = "Life's game";
 
-namespace gl {
-//    inline constexpr GLfloat unitSize = 0.1f;
+/**
+ * Return full path to resource fileName
+ * @param fileName
+ * @return
+ */
+inline std::string getResourcePath(const std::string &fileName)
+{
+    return std::string(RESOURCE_PATH + fileName);
+}
+
+/**
+ * Return full path to shader fileName
+ * @param fileName
+ * @return
+ */
+inline std::string getShaderPath(const std::string &fileName)
+{
+    return std::string(SHADER_PATH + fileName);
 }
 
 #endif //MOONLANDER_CONSTANTS_HPP

@@ -26,27 +26,49 @@ using glm::vec3;
 using glm::scale;
 using utils::math::operator/;
 
-static GLuint genFramebufferText(GLuint width, GLuint height)
+static GLuint genTexture(GLuint width, GLuint height,
+                         bool msaa = false, size_t samples = 4)
 {
     GLuint texture;
     glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, nullptr);
+    if (msaa) {
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples,
+                                GL_RGB, width, height, GL_TRUE);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                     GL_UNSIGNED_BYTE, nullptr);
+    }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    if (msaa)
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    else
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (GLuint error = glGetError(); error != GL_NO_ERROR)
+        throw GLException((format("Unable to generate texture! %1%\n")
+                           % gluErrorString(error)).str(),
+                          program_log_file_name(), Category::INTERNAL_ERROR);
+
     return texture;
 }
 
-static GLuint genRbo(GLuint width, GLuint height)
+static GLuint genRbo(GLuint width, GLuint height, bool msaa = false,
+                     size_t samples = 4)
 {
     GLuint rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    if (msaa)
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples,
+                                         GL_DEPTH24_STENCIL8, width, height);
+    else
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     return rbo;
@@ -60,12 +82,8 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+//    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 //        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-    // Setup Dear ImGui style
-//        ImGui::StyleColorsDark();
-    ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(Game::getWindow(), Game::getGLContext());
@@ -75,30 +93,60 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
     int screen_height = utils::getWindowHeight<GLuint>(*Game::getWindow());
     m_aspectRatio = static_cast<GLfloat>(screen_width) / screen_height;
 
-    glGenFramebuffers(1, &m_frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-    m_frameBufTex = genFramebufferText(screen_width, screen_height);
-    GLuint rbo = genRbo(screen_width, screen_height);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, m_frameBufTex, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                              GL_RENDERBUFFER, rbo);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        throw GLException((boost::format(
-                "Warning: Unable to generate frame buffer. "
-                "GL Error: %s\n") % gluErrorString(glGetError())).str(),
-                          program_log_file_name(), Category::INITIALIZATION_ERROR);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    bool msaa = Config::getVal<bool>("MSAA");
+
+    if (msaa) {
+        // Generate multisampled framebuffer
+        glGenFramebuffers(1, &m_frameBufferMSAA);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferMSAA);
+        // Create multisampled texture attachment
+        m_frameBufTexMSAA = genTexture(screen_width, screen_height, true);
+        GLuint rbo = genRbo(screen_width, screen_height, true);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D_MULTISAMPLE, m_frameBufTexMSAA, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                  GL_RENDERBUFFER, rbo);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            throw GLException((boost::format(
+                    "Warning: Unable to generate frame buffer. "
+                    "GL Error: %s\n") % gluErrorString(glGetError())).str(),
+                              program_log_file_name(),
+                              Category::INITIALIZATION_ERROR);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // Generate intermediate framebuffer
+        glGenFramebuffers(1, &m_frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+        // Create color attachment texture
+        m_frameBufTex = genTexture(screen_width, screen_height);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D,
+                               m_frameBufTex, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    } else {
+        glGenFramebuffers(1, &m_frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+        // Create color texture attachment
+        m_frameBufTex = genTexture(screen_width, screen_height);
+        GLuint rbo = genRbo(screen_width, screen_height);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, m_frameBufTex, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                  GL_RENDERBUFFER, rbo);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            throw GLException((boost::format(
+                    "Warning: Unable to generate frame buffer. "
+                    "GL Error: %s\n") % gluErrorString(glGetError())).str(),
+                              program_log_file_name(),
+                              Category::INITIALIZATION_ERROR);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
     auto camera = Camera::getInstance();
     GLfloat cubSize = 20.f;
     int fieldSize = Config::getVal<int>("FieldSize") * (cubSize + 10);
     camera->setPos({fieldSize, fieldSize, fieldSize});
     camera->updateView();
-    auto program = LifeProgram::getInstance();
-    program->useFramebufferProgram();
-    program->setView(camera->getView());
-    program->updateView();
 }
 
 RendererSystem::~RendererSystem()
@@ -151,7 +199,11 @@ void RendererSystem::drawToFramebuffer()
     program->updateProjection();
 
     // Render to texture
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+    if (Config::getVal<bool>("MSAA"))
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferMSAA);
+    else
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+
     glm::vec4 color = Config::getVal<glm::vec4>("BackgroundColor");
     glClearColor(color.x, color.y, color.z, color.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -162,8 +214,19 @@ void RendererSystem::drawToFramebuffer()
 
 void RendererSystem::drawGui()
 {
+    auto screen_width = utils::getWindowWidth<GLfloat>(*Game::getWindow());
+    auto screen_height = utils::getWindowHeight<GLfloat>(*Game::getWindow());
+
     auto program = LifeProgram::getInstance();
-    // Render texture to window
+    bool msaa = Config::getVal<bool>("MSAA");
+    if (msaa) {
+        // Render texture to window
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_frameBufferMSAA);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_frameBuffer);
+        glBlitFramebuffer(0, 0, screen_width, screen_height, 0, 0,
+                          screen_width, screen_height,
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -189,8 +252,6 @@ void RendererSystem::drawGui()
             break;
     }
 
-    auto screen_width = utils::getWindowWidth<GLfloat>(*Game::getWindow());
-    auto screen_height = utils::getWindowHeight<GLfloat>(*Game::getWindow());
     ImGui::SetNextWindowPos({0, 0});
     ImGui::SetNextWindowSize({static_cast<float>(screen_width),
                               static_cast<float>(screen_height)});
@@ -198,7 +259,8 @@ void RendererSystem::drawGui()
     ImGui::Begin("GameWindow", &open, ImGuiWindowFlags_NoResize
                                       | ImGuiWindowFlags_NoScrollbar
                                       | ImGuiWindowFlags_NoScrollWithMouse
-                                      | ImGuiWindowFlags_NoTitleBar);
+                                      | ImGuiWindowFlags_NoTitleBar
+                                      | ImGuiWindowFlags_NoBringToFrontOnFocus);
     {
         ImGui::BeginTable("table1", 2, ImGuiTableFlags_Borders
                                        | ImGuiTableFlags_Resizable
@@ -210,7 +272,6 @@ void RendererSystem::drawGui()
             ImGui::Text("Settings");
             ImGui::Separator();
 
-            bool some;
             ImGui::Text("Field size: ");
             ImGui::SameLine();
             ImGui::InputInt("##field_size", &Config::getVal<int>("FieldSize"));
@@ -244,24 +305,19 @@ void RendererSystem::drawGui()
                 setGameState(GameStates::STOP);
 
             if (ImGui::Button("Save simulation"))
-                ;
+                Config::save(Config::getVal<const char*>("ConfigFile"));
 
             if (ImGui::Button("Load simulation"))
-                ;
+                Config::load(Config::getVal<const char*>("ConfigFile"));
 
-            if (ImGui::Button("Video settings")) {
+            if (ImGui::Button("Video settings"))
                 m_videoSettingsOpen = true;
-            }
 
             if (m_videoSettingsOpen) {
-                const char* items[] = {
-                        "Light",
-                        "Classic",
-                        "Dark"
-                };
+                const char* items[] = { "Light", "Classic", "Dark" };
                 ImGui::Begin("Video settings", &m_videoSettingsOpen);
-                ImGui::Checkbox("Enable antialiasing",
-                                &Config::getVal<bool>("Antialiasing"));
+                ImGui::Checkbox("Enable antialiasing(Need restart)",
+                                &Config::getVal<bool>("MSAA"));
                 ImGui::Text("Application theme:");
                 ImGui::SameLine();
                 ImGui::ListBox("", &Config::getVal<int>("Theme"), items, 3);
@@ -273,8 +329,9 @@ void RendererSystem::drawGui()
             auto size = ImGui::GetContentRegionAvail();
             GLfloat image_height = size.x / m_aspectRatio;
             size.y = image_height;
-            if (getGameState() != GameStates::STOP)
-                ImGui::Image((ImTextureID)m_frameBufTex, size, {0, 1}, {1, 0});
+            if (getGameState() != GameStates::STOP) {
+                ImGui::Image((ImTextureID) m_frameBufTex, size, {0, 1}, {1, 0});
+            }
         }
         ImGui::EndTable();
     }

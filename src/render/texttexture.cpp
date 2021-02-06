@@ -5,8 +5,8 @@
 
 #include "exceptions/sdlexception.hpp"
 #include "render/texttexture.hpp"
+#include "utils/texture.hpp"
 
-using utils::getResourcePath;
 using boost::format;
 
 void TextTexture::setText(const std::string& text)
@@ -43,6 +43,7 @@ TextTexture::TextTexture(const std::string& textureText,
 void TextTexture::load(const std::string &textureText, SDL_Color color,
                        TTF_Font* font)
 {
+    using namespace utils::texture;
     assert(!textureText.empty());
 
     if (m_textureId != 0 && m_text == textureText)
@@ -73,17 +74,17 @@ void TextTexture::load(const std::string &textureText, SDL_Color color,
                                    "SDL_ttf Error: %s\n")
                             % TTF_GetError()).str());
 
-    SDL_Surface* flipped = utils::flipVertically(surface);
+    SDL_Surface* flipped = flipVertically(surface);
     SDL_FreeSurface(surface);
     if (!flipped)
         throw SdlException((format("Unable to flip surface %p\n") % surface).str());
 
-    GLenum texture_format = utils::getSurfaceFormatInfo(*flipped);
+    GLenum texture_format = getSurfaceFormatInfo(*flipped);
 
     m_textureWidth = flipped->w;
     m_textureHeight = flipped->h;
 
-    m_textureId = utils::loadTextureFromPixels32
+    m_textureId = loadTextureFromPixels32
             (static_cast<GLuint*>(flipped->pixels),
              m_textureWidth, m_textureHeight, texture_format);
     SDL_FreeSurface(flipped);
