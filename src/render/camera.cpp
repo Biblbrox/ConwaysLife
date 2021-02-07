@@ -91,7 +91,7 @@ glm::mat4 Camera::getProjection(GLfloat screen_width, GLfloat screen_height) con
 {
     return glm::perspective(
             m_zoom,
-            (float)screen_width / (float)screen_height, 0.1f, 1000.f);
+            (float)screen_width / (float)screen_height, 0.1f, 10000.f);
 }
 
 void Camera::updateView()

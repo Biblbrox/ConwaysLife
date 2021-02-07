@@ -46,10 +46,7 @@ public:
     {
         return Game::m_glcontext;
     }
-
-private:
-    GLuint m_screenWidth;
-    GLuint m_screenHeight;
+    
 public:
     bool vsync_supported;
 private:

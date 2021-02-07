@@ -146,12 +146,12 @@ void Game::update(size_t delta)
 
 void Game::initGL()
 {
-    m_screenWidth = utils::getDisplayWidth<GLuint>();
-    m_screenHeight = utils::getDisplayHeight<GLuint>();
+    auto screenWidth = utils::getDisplayWidth<GLuint>();
+    auto screenHeight = utils::getDisplayHeight<GLuint>();
 
     Game::m_window = SDL_CreateWindow(GAME_NAME.c_str(),
                                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                m_screenWidth, m_screenHeight,
+                                screenWidth, screenHeight,
                                 WINDOW_FLAGS);
     if (!m_window)
         throw SdlException((format("Unable to create window. Error: %1%\n")
@@ -190,6 +190,7 @@ void Game::initGL()
     glLineWidth(1.0f);
     glEnable(GL_BLEND);
     glEnable(GL_MULTISAMPLE);
+    glDisable(GL_DEPTH_CLAMP);
     glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //Use Vsync
