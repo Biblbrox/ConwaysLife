@@ -52,7 +52,6 @@ private:
 
     GLuint m_frameBufProg;
     GLuint m_screenProg;
-    GLuint m_curProgram;
 
     GLint m_texLoc;
     GLint m_colorLoc;

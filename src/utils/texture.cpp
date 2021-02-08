@@ -65,9 +65,9 @@ utils::texture::loadObj(const std::string& file, std::string& textureFile)
             for (auto& str: parts) {
                 std::vector<std::string> idx = split(str, "/");
                 size_t vertexIdx = std::stol(idx[0]);
-                size_t normalIdx = std::stol(idx[1]);
-                size_t textureIdx = std::stol(idx[2]);
-                indices.emplace_back(vertexIdx - 1, normalIdx - 1, textureIdx - 1);
+//                size_t normalIdx = std::stol(idx[1]);
+                size_t textureIdx = std::stol(idx[1]);
+                indices.emplace_back(vertexIdx - 1, 0, textureIdx - 1);
             }
         } else if (line.starts_with("mtllib")) {
             mtlFile = line.substr(line.find(' '));

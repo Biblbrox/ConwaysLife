@@ -35,6 +35,8 @@ public:
     virtual void freeProgram() final;
     virtual void setFloat(const std::string& str, GLfloat value);
     virtual void setInt(const std::string &name, GLint value);
+    virtual void setVec3(const std::string &name, const glm::vec3& value);
+    virtual void setVec4(const std::string &name, const glm::vec4& value);
 
     void bind() const;
     void unbind();

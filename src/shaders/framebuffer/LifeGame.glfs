@@ -1,14 +1,22 @@
 #version 330 core
 
 // Texture coords
-in vec2 TextureCoords;
+in vec2 TextureCoordsFrag;
+in vec3 VerPosFrag;
+flat in int isBorder;
 
 // Texture number
 uniform sampler2D TextureNum;
+uniform vec4 Color;
 
 out vec4 FragColor;
 
 void main()
 {
-    FragColor = texture(TextureNum, TextureCoords);
+    FragColor = texture(TextureNum, TextureCoordsFrag);
+
+    if (isBorder == 1)
+        FragColor.xyz = Color.xyz;
+    else
+        FragColor.xyz = vec3(1, 0, 0);
 }

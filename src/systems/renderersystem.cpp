@@ -168,8 +168,9 @@ void RendererSystem::drawSprites()
                 glm::vec3(en->getComponent<PositionComponent>()->x,
                           en->getComponent<PositionComponent>()->y,
                           en->getComponent<PositionComponent>()->z);
-        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite,
-                            pos, en->getComponent<PositionComponent>()->angle);
+        render::drawTextureOutline(*program, *en->getComponent<SpriteComponent>()->sprite,
+                                   pos, en->getComponent<PositionComponent>()->angle,
+                                   0.1f, {0.5f, 0.1f, 0.3f, 1.f}, {0.5f, 0.5f, 0.5f, 1.f});
     }
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)

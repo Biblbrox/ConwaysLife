@@ -88,6 +88,44 @@ void ShaderProgram::setFloat(const std::string &name, GLfloat value)
                 Category::INTERNAL_ERROR);
 }
 
+void ShaderProgram::setVec3(const std::string& name, const glm::vec3& value)
+{
+    using utils::log::Logger;
+
+    assert(!name.empty());
+    GLint loc = glGetUniformLocation(m_programID, name.c_str());
+    if (loc == -1)
+        throw GLException((format("Unable to set uniform variable %1%\n") %
+                           name).str(),
+                          shader_log_file_name(),
+                          Category::INTERNAL_ERROR);
+
+    glUniform3f(loc, value.x, value.y, value.z);
+    if (GLenum error = glGetError(); error != GL_NO_ERROR)
+        throw GLException((format("Unable to set uniform variable \"%1%\"\n") % name).str(),
+                          shader_log_file_name(),
+                          Category::INTERNAL_ERROR);
+}
+
+void ShaderProgram::setVec4(const std::string& name, const glm::vec4& value)
+{
+    using utils::log::Logger;
+
+    assert(!name.empty());
+    GLint loc = glGetUniformLocation(m_programID, name.c_str());
+    if (loc == -1)
+        throw GLException((format("Unable to set uniform variable %1%\n") %
+                           name).str(),
+                          shader_log_file_name(),
+                          Category::INTERNAL_ERROR);
+
+    glUniform4f(loc, value.x, value.y, value.z, value.w);
+    if (GLenum error = glGetError(); error != GL_NO_ERROR)
+        throw GLException((format("Unable to set uniform variable \"%1%\"\n") % name).str(),
+                          shader_log_file_name(),
+                          Category::INTERNAL_ERROR);
+}
+
 void ShaderProgram::setProjection(glm::mat4 matrix)
 {
     m_projectionMatrix = matrix;

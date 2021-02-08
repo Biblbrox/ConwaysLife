@@ -337,7 +337,7 @@ void World::init_field()
 
                 auto sprite = cell->getComponent<SpriteComponent>();
                 sprite->sprite = make_shared<Sprite>();
-                sprite->sprite->addTexture(getResourcePath("cube.obj"), cubeSize,
+                sprite->sprite->addTexture(getResourcePath("cube1.obj"), cubeSize,
                                            cubeSize, cubeSize);
                 sprite->sprite->generateDataBuffer();
                 m_cells[i][j][k] = cell;

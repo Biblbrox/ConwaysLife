@@ -84,7 +84,7 @@ render::drawTexture(ShaderProgram& program, const Texture &texture,
 
     glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
     glBindVertexArray(texture.getVAO());
-    glDrawArrays(GL_TRIANGLES, 0, 180);
+    glDrawArrays(GL_TRIANGLES, 0, 1665);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 
@@ -93,6 +93,31 @@ render::drawTexture(ShaderProgram& program, const Texture &texture,
     scaling = glm::scale(mat4(1.f), 1 / scale);
     program.leftMultModel(translation * rotation * scaling);
     program.updateModel();
+}
+
+void render::drawTextureOutline(ShaderProgram& program, const Texture &texture,
+                                const glm::vec3& pos, GLfloat angle,
+                                GLfloat outline, const glm::vec4& outlineColor,
+                                const glm::vec4& textureColor)
+{
+//    glDisable(GL_DEPTH_TEST);
+//     Set outline color
+    program.setVec4("Color", textureColor);
+//     Scale to outline
+//    glm::vec3 scale = glm::vec3(1 - outline);
+//    program.leftMultModel(glm::scale(glm::mat4(1.f), scale));
+//    program.updateModel();
+    // Draw texture
+    drawTexture(program, texture, pos, angle);
+    // Scale to normal
+//    program.leftMultModel(glm::scale(glm::mat4(1.f),
+//                                     glm::vec3(1 / scale)));
+//    program.updateModel();
+    // Set normal color back
+//    program.setVec4("Color", outlineColor);
+    // Draw texture
+//    drawTexture(program, texture, pos, angle);
+//    glEnable(GL_DEPTH_TEST);
 }
 
 void render::drawTriangles(const std::vector<vec2>& points)
