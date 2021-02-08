@@ -74,7 +74,16 @@ static GLuint genRbo(GLuint width, GLuint height, bool msaa = false,
     return rbo;
 }
 
-RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
+#define CHECK_FRAMEBUFFER_COMPLETE() \
+if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) \
+throw GLException((boost::format( \
+        "Warning: Unable to generate frame buffer. " \
+        "GL Error: %s\n") % gluErrorString(glGetError())).str(), \
+        utils::log::program_log_file_name(), \
+        utils::log::Category::INITIALIZATION_ERROR); \
+
+RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
+                                   m_colorSettingsOpen(false)
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -82,8 +91,13 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-//    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-//        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.WantCaptureMouse = true;
+    io.WantCaptureKeyboard = true;
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 0.0f;
+    style.Alpha = 1.0f;
+    style.AntiAliasedLines = false;
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(Game::getWindow(), Game::getGLContext());
@@ -106,12 +120,7 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
                                GL_TEXTURE_2D_MULTISAMPLE, m_frameBufTexMSAA, 0);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER, rbo);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            throw GLException((boost::format(
-                    "Warning: Unable to generate frame buffer. "
-                    "GL Error: %s\n") % gluErrorString(glGetError())).str(),
-                              program_log_file_name(),
-                              Category::INITIALIZATION_ERROR);
+        CHECK_FRAMEBUFFER_COMPLETE();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Generate intermediate framebuffer
@@ -122,8 +131,8 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D,
                                m_frameBufTex, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     } else {
+        // Generate not multisampled buffer
         glGenFramebuffers(1, &m_frameBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
         // Create color texture attachment
@@ -133,14 +142,9 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(true)
                                GL_TEXTURE_2D, m_frameBufTex, 0);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER, rbo);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            throw GLException((boost::format(
-                    "Warning: Unable to generate frame buffer. "
-                    "GL Error: %s\n") % gluErrorString(glGetError())).str(),
-                              program_log_file_name(),
-                              Category::INITIALIZATION_ERROR);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
+    CHECK_FRAMEBUFFER_COMPLETE();
 
     auto camera = Camera::getInstance();
     GLfloat cubSize = 20.f;
@@ -156,7 +160,8 @@ RendererSystem::~RendererSystem()
 
 void RendererSystem::drawSprites()
 {
-    auto sprites = getEntitiesByTag<SpriteComponent>();
+//    auto sprites = getEntitiesByTag<SpriteComponent>();
+    auto sprites = m_cesManager->getEntities();
     auto program = LifeProgram::getInstance();
     for (const auto& [key, en]: sprites) {
         std::shared_ptr<CellComponent> cell;
@@ -164,13 +169,16 @@ void RendererSystem::drawSprites()
             if (!cell->alive)
                 continue;
 
+        const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
+        const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
+
         const glm::vec3 pos =
                 glm::vec3(en->getComponent<PositionComponent>()->x,
                           en->getComponent<PositionComponent>()->y,
                           en->getComponent<PositionComponent>()->z);
-        render::drawTextureOutline(*program, *en->getComponent<SpriteComponent>()->sprite,
-                                   pos, en->getComponent<PositionComponent>()->angle,
-                                   0.1f, {0.5f, 0.1f, 0.3f, 1.f}, {0.5f, 0.5f, 0.5f, 1.f});
+        program->setVec4("Color", cellColor);
+        program->setVec4("OutlineColor", borderColor);
+        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite, pos);
     }
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)
@@ -291,11 +299,6 @@ void RendererSystem::drawGui()
 
             ImGui::Checkbox("Inverse rotation", &Config::getVal<bool>("InverseRotation"));
 
-            ImGui::Separator();
-            ImGui::ColorPicker4("Background color", glm::value_ptr(
-                    Config::getVal<glm::vec4>("BackgroundColor")));
-            ImGui::Separator();
-
             if (ImGui::Button("Start simulation"))
                 setGameState(GameStates::PLAY);
 
@@ -311,14 +314,44 @@ void RendererSystem::drawGui()
             if (ImGui::Button("Load simulation"))
                 Config::load(Config::getVal<const char*>("ConfigFile"));
 
+            if (ImGui::Button("Color Settings"))
+                m_colorSettingsOpen = true;
+
+            if (m_colorSettingsOpen) {
+                ImGui::Begin("Color settings", &m_colorSettingsOpen);
+                ImGui::Separator();
+                ImGui::Text("Background color");
+                ImGui::ColorPicker4("##Background color", glm::value_ptr(
+                        Config::getVal<glm::vec4>("BackgroundColor")));
+                ImGui::Separator();
+                ImGui::Text("Cell color");
+                ImGui::ColorPicker4("##Cell color", glm::value_ptr(
+                        Config::getVal<glm::vec4>("CellColor")));
+                ImGui::Separator();
+                ImGui::Text("Cell border color");
+                ImGui::ColorPicker4("##Cell border color", glm::value_ptr(
+                        Config::getVal<glm::vec4>("CellBorderColor")));
+                ImGui::Separator();
+                ImGui::Checkbox("Enable color game(Need simulation restart)",
+                                &Config::getVal<bool>("ColoredLife"));
+                ImGui::End();
+            }
+
             if (ImGui::Button("Video settings"))
                 m_videoSettingsOpen = true;
 
             if (m_videoSettingsOpen) {
                 const char* items[] = { "Light", "Classic", "Dark" };
                 ImGui::Begin("Video settings", &m_videoSettingsOpen);
-                ImGui::Checkbox("Enable antialiasing(Need restart)",
-                                &Config::getVal<bool>("MSAA"));
+                bool msaaEnabled = Config::getVal<bool>("MSAA");
+                if(ImGui::Checkbox("Enable antialiasing(Need game restart)",
+                                   &Config::getVal<bool>("MSAA"))
+                   || msaaEnabled) {
+                    ImGui::Text("MSAA Samples");
+                    ImGui::SameLine();
+                    ImGui::InputInt("##msaa_samples",
+                                    &Config::getVal<int>("MSAASamples"));
+                }
                 ImGui::Text("Application theme:");
                 ImGui::SameLine();
                 ImGui::ListBox("", &Config::getVal<int>("Theme"), items, 3);

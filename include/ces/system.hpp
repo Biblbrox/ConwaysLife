@@ -89,7 +89,7 @@ public:
     {
         static_assert(std::is_base_of_v<Component, ComponentType>,
                       "ComponentType class must be child of Component");
-        auto filtered = m_cesManager->getEntities();
+        auto& filtered = m_cesManager->getEntities();
         for (auto it = filtered.begin(); it != filtered.end();) {
             if (!it->second->getComponent<ComponentType>())
                 it = filtered.erase(it);

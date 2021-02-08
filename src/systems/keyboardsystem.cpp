@@ -5,15 +5,15 @@
 
 void KeyboardSystem::update_state(size_t delta)
 {
-    auto handles = getEntities();
-    for (auto& [key, en] : handles)
-        en->getComponent<KeyboardComponent>()->event_handler(
-                SDL_GetKeyboardState(nullptr));
+//    auto handles = getEntities();
+//    for (auto& [key, en] : handles)
+//        en->getComponent<KeyboardComponent>()->event_handler(
+//                SDL_GetKeyboardState(nullptr));
 
-    const Uint8* state = SDL_GetKeyboardState(nullptr);
+//    const Uint8* state = SDL_GetKeyboardState(nullptr);
 
-    if (state[SDL_SCANCODE_ESCAPE])
-        setGameRunnable(false);
+//    if (state[SDL_SCANCODE_ESCAPE])
+//        setGameRunnable(false);
 
     int screen_width = utils::getWindowWidth<int>(*Game::getWindow());
     int screen_height = utils::getWindowHeight<int>(*Game::getWindow());

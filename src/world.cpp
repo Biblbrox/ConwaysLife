@@ -13,11 +13,9 @@
 #include "components/cellcomponent.hpp"
 #include "components/spritecomponent.hpp"
 #include "systems/renderersystem.hpp"
-#include "systems/movementsystem.hpp"
 #include "components/textcomponent.hpp"
 #include "systems/keyboardsystem.hpp"
 #include "systems/animationsystem.hpp"
-#include "systems/collisionsystem.hpp"
 #include "systems/physicssystem.hpp"
 #include "systems/particlerendersystem.hpp"
 #include "utils/random.hpp"
@@ -37,9 +35,6 @@ using std::cos;
 using std::find_if;
 using utils::fix_coords;
 
-const char* const msgFont = "kenvector_future2.ttf";
-const SDL_Color fontColor = {0xFF, 0xFF, 0xFF, 0xFF};
-
 const GLfloat cubeSize = 20.f;
 
 void World::update_text()
@@ -54,14 +49,30 @@ void World::update_text()
 World::World() : m_scaled(false), m_wasInit(false),
                  m_cells(boost::extents[6][6][6])
 {
-//    Config::addVal("FieldSize", 6, "int");
-//    Config::addVal("StepTime", 5.f, "float");
-//    Config::addVal("NeirCount", 3, "int");
-//    Config::addVal("NeirCountDie", 4, "int");
-//    Config::addVal("BackgroundColor", glm::vec4(0.2f, 0.f, 0.2f, 1.f), "vec4");
-//    Config::addVal("InverseRotation", false, "bool");
-//    Config::addVal("MSAA", false, "bool");
-//    Config::addVal("Theme", 0, "int");
+    if (!Config::hasKey("FieldSize"))
+        Config::addVal("FieldSize", 6, "int");
+    if (!Config::hasKey("StepTime"))
+        Config::addVal("StepTime", 5.f, "float");
+    if (!Config::hasKey("NeirCount"))
+        Config::addVal("NeirCount", 3, "int");
+    if (!Config::hasKey("NeirCountDie"))
+        Config::addVal("NeirCountDie", 4, "int");
+    if (!Config::hasKey("BackgroundColor"))
+        Config::addVal("BackgroundColor", glm::vec4(0.2f, 0.f, 0.2f, 1.f), "vec4");
+    if (!Config::hasKey("InverseRotation"))
+        Config::addVal("InverseRotation", false, "bool");
+    if (!Config::hasKey("MSAA"))
+        Config::addVal("MSAA", false, "bool");
+    if (!Config::hasKey("MSAASamples"))
+        Config::addVal("MSAASamples", 4, "int");
+    if (!Config::hasKey("Theme"))
+        Config::addVal("Theme", 0, "int");
+    if (!Config::hasKey("CellColor"))
+        Config::addVal("CellColor", glm::vec4(1.f, 0.2f, 0.f, 1.f), "vec4");
+    if (!Config::hasKey("CellBorderColor"))
+        Config::addVal("CellBorderColor", glm::vec4(1.f, 1.f, 1.f, 1.f), "vec4");
+    if (!Config::hasKey("ColoredLife"))
+        Config::addVal("ColoredLife", false, "bool");
 }
 
 World::~World()
@@ -124,11 +135,9 @@ void World::update(size_t delta)
 void World::init()
 {
     if (!m_wasInit) {
-        createSystem<RendererSystem>();
-        createSystem<MovementSystem>();
         createSystem<KeyboardSystem>();
+        createSystem<RendererSystem>();
         createSystem<AnimationSystem>();
-        createSystem<CollisionSystem>();
         createSystem<PhysicsSystem>();
         createSystem<ParticleRenderSystem>();
 
@@ -337,7 +346,7 @@ void World::init_field()
 
                 auto sprite = cell->getComponent<SpriteComponent>();
                 sprite->sprite = make_shared<Sprite>();
-                sprite->sprite->addTexture(getResourcePath("cube1.obj"), cubeSize,
+                sprite->sprite->addTexture(getResourcePath("cube.obj"), cubeSize,
                                            cubeSize, cubeSize);
                 sprite->sprite->generateDataBuffer();
                 m_cells[i][j][k] = cell;

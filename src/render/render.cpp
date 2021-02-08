@@ -95,29 +95,34 @@ render::drawTexture(ShaderProgram& program, const Texture &texture,
     program.updateModel();
 }
 
-void render::drawTextureOutline(ShaderProgram& program, const Texture &texture,
-                                const glm::vec3& pos, GLfloat angle,
-                                GLfloat outline, const glm::vec4& outlineColor,
-                                const glm::vec4& textureColor)
+void
+render::drawTexture(ShaderProgram& program, const Texture &texture,
+                    const glm::vec3& position)
 {
-//    glDisable(GL_DEPTH_TEST);
-//     Set outline color
-    program.setVec4("Color", textureColor);
-//     Scale to outline
-//    glm::vec3 scale = glm::vec3(1 - outline);
-//    program.leftMultModel(glm::scale(glm::mat4(1.f), scale));
-//    program.updateModel();
-    // Draw texture
-    drawTexture(program, texture, pos, angle);
-    // Scale to normal
-//    program.leftMultModel(glm::scale(glm::mat4(1.f),
-//                                     glm::vec3(1 / scale)));
-//    program.updateModel();
-    // Set normal color back
-//    program.setVec4("Color", outlineColor);
-    // Draw texture
-//    drawTexture(program, texture, pos, angle);
-//    glEnable(GL_DEPTH_TEST);
+    assert(texture.getVAO() != 0);
+
+    glm::vec3 pos = {2.f * position.x / texture.getWidth(),
+                     2.f * position.y / texture.getHeight(),
+                     2.f * position.z / texture.getDepth()};
+
+    const glm::vec3 scale = glm::vec3(texture.getWidth(), texture.getHeight(),
+                                      texture.getDepth());
+
+    mat4 translation = translate(mat4(1.f), vec3(pos.x, pos.y, pos.z));
+    mat4 scaling = glm::scale(mat4(1.f), scale);
+    program.leftMultModel(scaling * translation);
+    program.updateModel();
+
+    glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
+    glBindVertexArray(texture.getVAO());
+    glDrawArrays(GL_TRIANGLES, 0, 1665);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+
+    translation[3] = glm::vec4(-pos.x,  -pos.y, -pos.z, 1);
+    scaling = glm::scale(mat4(1.f), 1 / scale);
+    program.leftMultModel(translation * scaling);
+    program.updateModel();
 }
 
 void render::drawTriangles(const std::vector<vec2>& points)

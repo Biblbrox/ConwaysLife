@@ -8,6 +8,7 @@ flat in int isBorder;
 // Texture number
 uniform sampler2D TextureNum;
 uniform vec4 Color;
+uniform vec4 OutlineColor;
 
 out vec4 FragColor;
 
@@ -16,7 +17,7 @@ void main()
     FragColor = texture(TextureNum, TextureCoordsFrag);
 
     if (isBorder == 1)
-        FragColor.xyz = Color.xyz;
+        FragColor.xyz = OutlineColor.xyz;
     else
-        FragColor.xyz = vec3(1, 0, 0);
+        FragColor.xyz = Color.xyz;
 }

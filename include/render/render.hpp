@@ -22,10 +22,8 @@ namespace render
     void drawTexture(ShaderProgram& program, const Texture &texture,
                      const glm::vec3& pos, GLfloat angle);
 
-    void drawTextureOutline(ShaderProgram& program, const Texture &texture,
-                            const glm::vec3& pos, GLfloat angle,
-                            GLfloat outline, const glm::vec4& outlineColor,
-                            const glm::vec4& textureColor);
+    void drawTexture(ShaderProgram& program, const Texture &texture,
+                     const glm::vec3& pos);
     
     void drawLinen(const std::vector<vec2>& points, bool adjacency = false);
 

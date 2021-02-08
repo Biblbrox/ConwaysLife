@@ -6,6 +6,7 @@
 #include <SDL_mixer.h>
 
 #include "game.hpp"
+#include "config.hpp"
 #include "constants.hpp"
 #include "exceptions/sdlexception.hpp"
 #include "exceptions/glexception.hpp"
@@ -119,8 +120,11 @@ void Game::initOnceSDL2()
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    if (Config::getVal<bool>("MSAA")) {
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,
+                            Config::getVal<int>("MSAASamples"));
+    }
 
     SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0");
 
@@ -189,7 +193,10 @@ void Game::initGL()
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     glLineWidth(1.0f);
     glEnable(GL_BLEND);
-    glEnable(GL_MULTISAMPLE);
+
+    if (Config::getVal<bool>("MSAA"))
+        glEnable(GL_MULTISAMPLE);
+
     glDisable(GL_DEPTH_CLAMP);
     glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

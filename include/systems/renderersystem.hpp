@@ -33,6 +33,7 @@ private:
     GLfloat m_aspectRatio;
 
     bool m_videoSettingsOpen;
+    bool m_colorSettingsOpen;
 
     void drawGui();
 };
