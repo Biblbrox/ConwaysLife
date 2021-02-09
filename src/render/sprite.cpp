@@ -1,7 +1,6 @@
 #include <GL/glew.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
 #include <boost/format.hpp>
+#include <iostream>
 
 #include "exceptions/sdlexception.hpp"
 #include "render/sprite.hpp"
@@ -12,14 +11,11 @@ using utils::log::program_log_file_name;
 using utils::log::shader_log_file_name;
 using boost::format;
 
-Sprite::Sprite()
+Sprite::Sprite() : m_vao(nullptr), m_texCount(0), m_curIdx(0)
 {
-    m_vao = nullptr;
-    m_texCount = 0;
-    m_curIdx = 0;
 }
 
-GLuint Sprite::addTexture(const std::string& objFile,
+void Sprite::addTexture(const std::string& objFile,
                           GLfloat textureWidth, GLfloat textureHeight,
                           GLfloat textureDepth)
 {
@@ -32,16 +28,12 @@ GLuint Sprite::addTexture(const std::string& objFile,
                                           nullptr, nullptr);
     m_textureIds.emplace_back(textureId);
 
-    utils::Rect rect;
-    rect.w = textureWidth;
-    rect.h = textureHeight;
-    rect.d = textureDepth;
-    m_sizes.emplace_back(rect);
+    m_sizes.emplace_back(textureWidth, textureHeight, textureDepth);
 
     ++m_texCount;
 }
 
-utils::Rect Sprite::getClip(GLuint idx) noexcept
+glm::vec3 Sprite::getClip(GLuint idx) noexcept
 {
     assert(idx < m_texCount);
     return m_sizes[idx];
@@ -55,17 +47,12 @@ void Sprite::generateDataBuffer()
 
         glGenVertexArrays(m_texCount, m_vao);
         GLuint VBO;
-//        GLuint EBO;
 
         for (GLuint i = 0; i < m_texCount; ++i) {
 
             GLfloat* vertices = &m_vertices[i][0];
             glBindVertexArray(m_vao[i]);
             glGenBuffers(1, &VBO);
-//            glGenBuffers(1, &EBO);
-//            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-//                         GL_STATIC_DRAW);
 
             size_t vertSize = m_vertices[i].size() * sizeof(GLfloat);
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -81,9 +68,7 @@ void Sprite::generateDataBuffer()
 
             glBindVertexArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-//            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-//            glDeleteBuffers(1, &EBO);
             glDeleteBuffers(1, &VBO);
         }
 
@@ -124,7 +109,7 @@ GLuint Sprite::getIdx() const noexcept
     return m_curIdx;
 }
 
-utils::Rect Sprite::getCurrentClip() const noexcept
+glm::vec3 Sprite::getCurrentClip() const noexcept
 {
     return m_sizes[m_curIdx];
 }
@@ -137,12 +122,17 @@ void Sprite::setIdx(GLuint idx)
 
 GLuint Sprite::getWidth() const noexcept
 {
-    return m_sizes[m_curIdx].w;
+    return m_sizes[m_curIdx].x;
 }
 
 GLuint Sprite::getHeight() const noexcept
 {
-    return m_sizes[m_curIdx].h;
+    return m_sizes[m_curIdx].y;
+}
+
+GLuint Sprite::getDepth() const noexcept
+{
+    return m_sizes[m_curIdx].z;
 }
 
 GLuint Sprite::getSpritesCount() const noexcept
@@ -153,10 +143,5 @@ GLuint Sprite::getSpritesCount() const noexcept
 GLuint Sprite::getTextureID() const
 {
     return m_textureIds[m_curIdx];
-}
-
-GLuint Sprite::getDepth() const noexcept
-{
-    return m_sizes[m_curIdx].d;
 }
 

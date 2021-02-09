@@ -170,76 +170,76 @@ void World::update_field()
         for (CellIndex j = 0; j < fieldSize; ++j) {
             for (CellIndex k = 0; k < fieldSize; ++k) {
                 auto cell = m_cells[i][j][k];
-                auto cellComp = cell->getComponent<CellComponent>();
+                auto cellComp = cell->getComponentInsert<CellComponent>();
                 size_t neirCount = 0;
                 bool hasUp =
                         (j != fieldSize - 1) ?
-                        m_cells[i][j + 1][k]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i][j + 1][k]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasUp)
                     ++neirCount;
                 bool hasDown =
                         (j != 0) ?
-                        m_cells[i][j - 1][k]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i][j - 1][k]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasDown)
                     ++neirCount;
                 bool hasLeft =
                         (i != 0) ?
-                        m_cells[i - 1][j][k]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i - 1][j][k]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasLeft)
                     ++neirCount;
                 bool hasRight =
                         (i != fieldSize - 1) ?
-                        m_cells[i + 1][j][k]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i + 1][j][k]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasRight)
                     ++neirCount;
                 bool hasForward =
                         (k != fieldSize - 1) ?
-                        m_cells[i][j][k + 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i][j][k + 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasForward)
                     ++neirCount;
                 bool hasBack =
                         (k != 0) ?
-                        m_cells[i][j][k - 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i][j][k - 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasBack)
                     ++neirCount;
                 bool hasUpCor1 =
                         (i != 0 && k != 0 && j != fieldSize - 1) ?
-                        m_cells[i - 1][j + 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i - 1][j + 1][k - 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasUpCor1)
                     ++neirCount;
                 bool hasUpCor2 =
                         (i != fieldSize - 1 && k != 0 && j != fieldSize - 1) ?
-                        m_cells[i + 1][j + 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i + 1][j + 1][k - 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasUpCor2)
                     ++neirCount;
                 bool hasUpCor3 =
                         (i != fieldSize - 1 && k != fieldSize - 1 && j != fieldSize - 1) ?
-                        m_cells[i + 1][j + 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i + 1][j + 1][k + 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasUpCor3)
                     ++neirCount;
                 bool hasUpCor4 =
                         (i != 0 && k != fieldSize - 1 && j != fieldSize - 1) ?
-                        m_cells[i - 1][j + 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i - 1][j + 1][k + 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasUpCor4)
                     ++neirCount;
                 bool hasDownCor1 =
                         (i != 0 && k != 0 && j != 0) ?
-                        m_cells[i - 1][j - 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i - 1][j - 1][k - 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasDownCor1)
                     ++neirCount;
                 bool hasDownCor2 =
                         (i != fieldSize - 1 && k != 0 && j != 0) ?
-                        m_cells[i + 1][j - 1][k - 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i + 1][j - 1][k - 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasDownCor2)
                     ++neirCount;
                 bool hasDownCor3 =
                         (i != fieldSize - 1 && k != fieldSize - 1 && j != 0) ?
-                        m_cells[i + 1][j - 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i + 1][j - 1][k + 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasDownCor3)
                     ++neirCount;
                 bool hasDownCor4 =
                         (i != 0 && k != fieldSize - 1 && j != 0) ?
-                        m_cells[i - 1][j - 1][k + 1]->getComponent<CellComponent>()->alive : false;
+                        m_cells[i - 1][j - 1][k + 1]->getComponentInsert<CellComponent>()->alive : false;
                 if (hasDownCor4)
                     ++neirCount;
 
@@ -262,7 +262,7 @@ void World::update_field()
     for (size_t i = 0; i < fieldSize; ++i) {
         for (size_t j = 0; j < fieldSize; ++j) {
             for (size_t k = 0; k < fieldSize; ++k) {
-                m_cells[i][j][k]->getComponent<CellComponent>()->alive
+                m_cells[i][j][k]->getComponentInsert<CellComponent>()->alive
                         = new_state[i][j][k];
             }
         }
@@ -339,19 +339,19 @@ void World::init_field()
                 cell->activate();
                 cell->addComponents<SpriteComponent, CellComponent, PositionComponent>();
 
-                auto pos = cell->getComponent<PositionComponent>();
+                auto pos = cell->getComponentInsert<PositionComponent>();
                 pos->x = init_x + cubeSize * i;
                 pos->y = init_y + cubeSize * j;
                 pos->z = init_z + cubeSize * k;
 
-                auto sprite = cell->getComponent<SpriteComponent>();
+                auto sprite = cell->getComponentInsert<SpriteComponent>();
                 sprite->sprite = make_shared<Sprite>();
                 sprite->sprite->addTexture(getResourcePath("cube.obj"), cubeSize,
                                            cubeSize, cubeSize);
                 sprite->sprite->generateDataBuffer();
                 m_cells[i][j][k] = cell;
 
-                auto cellComp = cell->getComponent<CellComponent>();
+                auto cellComp = cell->getComponentInsert<CellComponent>();
                 if (std::count(initial_cells.cbegin(),
                                initial_cells.cend(),
                                std::array<size_t, 3>{(size_t)i, (size_t)j, (size_t)k}) != 0) {

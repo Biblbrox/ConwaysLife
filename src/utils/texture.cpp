@@ -25,9 +25,9 @@ std::vector<GLfloat>
 utils::texture::loadObj(const std::string& file, std::string& textureFile)
 {
     // TODO: write more general cache
-    static std::vector<GLfloat> last_result;
-    static std::string last_file;
-    static std::string last_tex_file;
+    static std::vector<GLfloat> last_result = {};
+    static std::string last_file = "";
+    static std::string last_tex_file = "";
 
     if (!last_result.empty() && last_file == file) {
         textureFile = last_tex_file;

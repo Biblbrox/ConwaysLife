@@ -165,20 +165,18 @@ void RendererSystem::drawSprites()
     auto program = LifeProgram::getInstance();
     for (const auto& [key, en]: sprites) {
         std::shared_ptr<CellComponent> cell;
-        if ((cell = en->getComponent<CellComponent>()))
+        if ((cell = en->getComponentInsert<CellComponent>()))
             if (!cell->alive)
                 continue;
 
         const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
         const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
 
-        const glm::vec3 pos =
-                glm::vec3(en->getComponent<PositionComponent>()->x,
-                          en->getComponent<PositionComponent>()->y,
-                          en->getComponent<PositionComponent>()->z);
+        auto posComp = en->getComponentInsert<PositionComponent>();
+        const glm::vec3 pos = glm::vec3(posComp->x, posComp->y, posComp->z);
         program->setVec4("Color", cellColor);
         program->setVec4("OutlineColor", borderColor);
-        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite, pos);
+        render::drawTexture(*program, *en->getComponentInsert<SpriteComponent>()->sprite, pos);
     }
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)

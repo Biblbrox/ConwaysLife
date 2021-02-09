@@ -13,7 +13,9 @@ std::shared_ptr<Camera> Camera::instance = nullptr;
 
 Camera::Camera(const glm::vec3& pos, const glm::vec3& target,
                const glm::vec3& up) : m_pos(pos), m_target(target), m_up(up),
-                                      m_mouseSens(initSens), m_zoom(initZoom)
+                                      m_mouseSens(initSens), m_zoom(initZoom),
+                                      m_xOffset(0), m_yOffset(0),
+                                      m_view(glm::mat4(1.f))
 {
     updateView();
 }

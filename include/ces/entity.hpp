@@ -100,6 +100,22 @@ public:
         return std::dynamic_pointer_cast<ComponentType>(it->second);
     }
 
+    /**
+     * Get component by type or insert if doesn't exists.
+     * This method is much faster than getComponent if
+     * new component don't created.
+     * @tparam ComponentType
+     * @return
+     */
+    template <class ComponentType>
+    std::shared_ptr<ComponentType> getComponentInsert()
+    {
+        static_assert(std::is_base_of_v<Component, ComponentType>,
+                      "Template parameter class must be child of Component");
+
+        return std::dynamic_pointer_cast<ComponentType>(m_components[type_id<ComponentType>()]);
+    }
+
     template <class ComponentType>
     void removeComponent()
     {

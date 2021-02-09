@@ -13,15 +13,19 @@ class Sprite: public Texture
 public:
     explicit Sprite();
     ~Sprite();
-    GLuint addTexture(const std::string& objFile,
+//    Sprite(Sprite&& en) = default;
+//    Sprite(Sprite& en) = default;
+//    Sprite& operator=(Sprite&&) = default;
+//    Sprite& operator=(const Sprite&) = default;
+    void addTexture(const std::string& objFile,
                       GLfloat textureWidth,
                       GLfloat textureHeight, GLfloat textureDepth);
-    utils::Rect getClip(GLuint idx) noexcept;
+    glm::vec3 getClip(GLuint idx) noexcept;
 
     GLuint getWidth() const noexcept override;
     GLuint getHeight() const noexcept override;
     GLuint getDepth() const noexcept override;
-    utils::Rect getCurrentClip() const noexcept;
+    glm::vec3 getCurrentClip() const noexcept;
     GLuint getIdx() const noexcept;
     void setIdx(GLuint idx);
     GLuint getSpritesCount() const noexcept;
@@ -32,7 +36,7 @@ public:
 
     GLuint getVAO() const override;
 protected:
-    std::vector<utils::Rect> m_sizes;
+    std::vector<glm::vec3> m_sizes;
 
     GLuint* m_vao;
     GLuint m_texCount;
