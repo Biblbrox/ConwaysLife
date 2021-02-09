@@ -8,7 +8,8 @@ Screenshots:
 
 <h3>Compilation</h3>
 Dependencies:
-``` bash
+
+```bash
 libboost
 libglew
 libglm
@@ -19,9 +20,11 @@ sdl2-mixer
 ```
 
 Compilation with cmake: <br>
+
 ```cmake
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. 
 make -j<n>
 ```
+
