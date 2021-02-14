@@ -7,7 +7,6 @@
 #include "utils/utils.hpp"
 #include "utils/typelist.hpp"
 
-class CesManager;
 class Component;
 
 using utils::type_id;
@@ -102,8 +101,6 @@ public:
 
     /**
      * Get component by type or insert if doesn't exists.
-     * This method is much faster than getComponent if
-     * new component don't created.
      * @tparam ComponentType
      * @return
      */
@@ -130,7 +127,7 @@ public:
     const std::unordered_map<size_t, std::shared_ptr<Component>>&
     getComponents() const;
 
-    void setCesManager(CesManager* cesMan);
+//    void setCesManager(CesManager* cesMan);
 
     void activate();
     bool isActivate() const;
@@ -138,7 +135,7 @@ public:
 
 private:
     std::unordered_map<size_t, std::shared_ptr<Component>> m_components;
-    CesManager* m_cesManager;
+//    CesManager* m_cesManager;
     bool m_alive;
 };
 

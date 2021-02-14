@@ -32,15 +32,15 @@ public:
     GLuint getTextureID() const override;
 
     void generateDataBuffer() override;
-    void freeVBO() noexcept override final;
+    void freeVBO() noexcept final;
 
     GLuint getVAO() const override;
 protected:
     std::vector<glm::vec3> m_sizes;
 
     GLuint* m_vao;
-    GLuint m_texCount;
-    GLuint m_curIdx = 0;
+//    GLuint m_texCount;
+//    GLuint m_curIdx = 0;
 
     std::vector<std::vector<GLfloat>> m_vertices;
     std::vector<GLuint> m_textureIds;

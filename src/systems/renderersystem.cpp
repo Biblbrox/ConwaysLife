@@ -95,7 +95,7 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
     io.WantCaptureKeyboard = true;
 
     ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowRounding = 0.0f;
+    style.WindowRounding = 8.f;
     style.Alpha = 1.0f;
     style.AntiAliasedLines = false;
 
@@ -160,23 +160,22 @@ RendererSystem::~RendererSystem()
 
 void RendererSystem::drawSprites()
 {
-//    auto sprites = getEntitiesByTag<SpriteComponent>();
-    auto sprites = m_cesManager->getEntities();
+    const auto& sprites = m_cesManager->getEntities();
     auto program = LifeProgram::getInstance();
     for (const auto& [key, en]: sprites) {
         std::shared_ptr<CellComponent> cell;
-        if ((cell = en->getComponentInsert<CellComponent>()))
+        if ((cell = en->getComponent<CellComponent>()))
             if (!cell->alive)
                 continue;
 
         const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
         const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
 
-        auto posComp = en->getComponentInsert<PositionComponent>();
+        auto posComp = en->getComponent<PositionComponent>();
         const glm::vec3 pos = glm::vec3(posComp->x, posComp->y, posComp->z);
         program->setVec4("Color", cellColor);
         program->setVec4("OutlineColor", borderColor);
-        render::drawTexture(*program, *en->getComponentInsert<SpriteComponent>()->sprite, pos);
+        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite, pos);
     }
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)
@@ -306,11 +305,17 @@ void RendererSystem::drawGui()
             if (ImGui::Button("Stop simulation"))
                 setGameState(GameStates::STOP);
 
-            if (ImGui::Button("Save simulation"))
+            if (ImGui::Button("Save config"))
                 Config::save(Config::getVal<const char*>("ConfigFile"));
 
-            if (ImGui::Button("Load simulation"))
+            if (ImGui::Button("Load config"))
                 Config::load(Config::getVal<const char*>("ConfigFile"));
+
+            if (ImGui::Button("Save simulation"))
+                ;
+
+            if (ImGui::Button("Load simulation"))
+                ;
 
             if (ImGui::Button("Color Settings"))
                 m_colorSettingsOpen = true;

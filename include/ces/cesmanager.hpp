@@ -12,7 +12,7 @@ public:
     virtual void init() = 0;
     virtual void update(size_t delta) = 0;
 
-    virtual std::shared_ptr<Entity> createEntity(const std::string& name);
+    virtual std::shared_ptr<Entity> createEntity(size_t name);
 
     template <typename SystemType>
     SystemType& createSystem()
@@ -27,10 +27,10 @@ public:
         return *system;
     }
 
-    virtual std::unordered_map<std::string, std::shared_ptr<Entity>>& getEntities();
+    virtual std::unordered_map<size_t, std::shared_ptr<Entity>>& getEntities();
 
 protected:
-    std::unordered_map<std::string, std::shared_ptr<Entity>> m_entities;
+    std::unordered_map<size_t, std::shared_ptr<Entity>> m_entities;
     std::unordered_map<size_t, std::shared_ptr<BaseSystem>> m_systems;
 };
 

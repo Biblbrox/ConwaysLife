@@ -97,19 +97,6 @@ namespace utils
         return clips;
     }
 
-    namespace physics
-    {
-        /**
-         * Return altitude at (x, y). Can be used also to get y coordinate
-         * of altitude y at point x.
-         * @param points
-         * @param x
-         * @param y
-         * @return
-         */
-        GLfloat altitude(const std::vector<vec2>& points, GLfloat x, GLfloat y);
-    }
-
     /**
      * Add padding to line
      * @param line

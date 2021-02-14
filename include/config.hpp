@@ -1,7 +1,7 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#include <map>
+#include <unordered_map>
 #include <any>
 #include <fstream>
 #include <iostream>
@@ -116,11 +116,13 @@ public:
                 addVal(key, val, "vec4");
             }
         }
+
+        in.close();
     }
 
 private:
-    static std::map<std::string, std::any> m_values;
-    static std::map<std::string, std::string> m_types;
+    static std::unordered_map<std::string, std::any> m_values;
+    static std::unordered_map<std::string, std::string> m_types;
 };
 
 #endif //CONFIG_HPP

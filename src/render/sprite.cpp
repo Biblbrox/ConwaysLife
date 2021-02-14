@@ -11,7 +11,7 @@ using utils::log::program_log_file_name;
 using utils::log::shader_log_file_name;
 using boost::format;
 
-Sprite::Sprite() : m_vao(nullptr), m_texCount(0), m_curIdx(0)
+Sprite::Sprite() : m_vao(nullptr)
 {
 }
 
@@ -29,26 +29,24 @@ void Sprite::addTexture(const std::string& objFile,
     m_textureIds.emplace_back(textureId);
 
     m_sizes.emplace_back(textureWidth, textureHeight, textureDepth);
-
-    ++m_texCount;
 }
 
 glm::vec3 Sprite::getClip(GLuint idx) noexcept
 {
-    assert(idx < m_texCount);
+    assert(idx < m_sizes.size());
     return m_sizes[idx];
 }
 
 void Sprite::generateDataBuffer()
 {
     if (!m_textureIds.empty()) {
-        m_texCount = m_sizes.size();
-        m_vao = new GLuint[m_texCount];
+        size_t texCount = m_sizes.size();
+        m_vao = new GLuint[texCount];
 
-        glGenVertexArrays(m_texCount, m_vao);
+        glGenVertexArrays(texCount, m_vao);
         GLuint VBO;
 
-        for (GLuint i = 0; i < m_texCount; ++i) {
+        for (GLuint i = 0; i < texCount; ++i) {
 
             GLfloat* vertices = &m_vertices[i][0];
             glBindVertexArray(m_vao[i]);
@@ -86,7 +84,7 @@ void Sprite::generateDataBuffer()
 void Sprite::freeVBO() noexcept
 {
     if (m_vao) {
-        glDeleteVertexArrays(m_texCount, m_vao);
+        glDeleteVertexArrays(m_sizes.size(), m_vao);
         delete[] m_vao;
         m_vao = nullptr;
     }
@@ -101,47 +99,47 @@ Sprite::~Sprite()
 
 GLuint Sprite::getVAO() const
 {
-    return m_vao[m_curIdx];
+    return m_vao[m_textureId];
 }
 
 GLuint Sprite::getIdx() const noexcept
 {
-    return m_curIdx;
+    return m_textureId;
 }
 
 glm::vec3 Sprite::getCurrentClip() const noexcept
 {
-    return m_sizes[m_curIdx];
+    return m_sizes[m_textureId];
 }
 
 void Sprite::setIdx(GLuint idx)
 {
-    assert(idx < m_texCount);
-    m_curIdx = idx;
+    assert(idx < m_sizes.size());
+    m_textureId = idx;
 }
 
 GLuint Sprite::getWidth() const noexcept
 {
-    return m_sizes[m_curIdx].x;
+    return m_sizes[m_textureId].x;
 }
 
 GLuint Sprite::getHeight() const noexcept
 {
-    return m_sizes[m_curIdx].y;
+    return m_sizes[m_textureId].y;
 }
 
 GLuint Sprite::getDepth() const noexcept
 {
-    return m_sizes[m_curIdx].z;
+    return m_sizes[m_textureId].z;
 }
 
 GLuint Sprite::getSpritesCount() const noexcept
 {
-    return m_texCount;
+    return m_sizes.size();
 }
 
 GLuint Sprite::getTextureID() const
 {
-    return m_textureIds[m_curIdx];
+    return m_textureIds[m_textureId];
 }
 

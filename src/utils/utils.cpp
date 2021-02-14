@@ -22,24 +22,6 @@ void utils::padLine(std::string& line, size_t pad)
     line.insert(line.end(), ' ', pad);
 }
 
-GLfloat
-utils::physics::altitude(const std::vector<vec2>& line_points,
-                              GLfloat x, GLfloat y)
-{
-    assert(line_points.size() >= 2 && "line_points size must be >= 2");
-    size_t line_idx = std::prev(std::lower_bound(line_points.cbegin(), line_points.cend(),
-                                       x, [](const vec2& point, GLfloat val) {
-                return point.x < val;
-    })) - line_points.cbegin();
-
-    const GLfloat curX = line_points[line_idx].x;
-    const GLfloat nextX = line_points[line_idx + 1].x;
-    const GLfloat curY = line_points[line_idx].y;
-    const GLfloat nextY = line_points[line_idx + 1].y;
-
-    return (x - curX) / (nextX - curX) * (nextY - curY) + curY - y;
-}
-
 GLuint utils::loadShaderFromFile(const std::string &path, GLenum shaderType)
 {
     assert(!path.empty() && "Empty file path");

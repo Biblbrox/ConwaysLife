@@ -44,9 +44,22 @@ namespace utils::math {
         return res;
     }
 
-    template <typename T> constexpr int sgn(T val)
+    template <typename T>
+    constexpr int sgn(T val)
     {
         return (T(0) < val) - (val < T(0));
+    }
+
+    template <typename T, typename U>
+    constexpr auto cantor_pairing(T f, U s)
+    {
+        return 0.5 * (f + s) * (f + s + 1) + s;
+    }
+
+    template <typename T, typename ...Args>
+    constexpr auto cantor_pairing(T arg, Args... args)
+    {
+        return cantor_pairing(arg, cantor_pairing(args...));
     }
 
     /**
@@ -67,7 +80,7 @@ namespace utils::math {
     }
 
     template <typename T>
-    inline glm::vec2 operator/(T val, const glm::vec2& vec)
+    constexpr glm::vec2 operator/(T val, const glm::vec2& vec)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
                                                " must be arithmetical");
@@ -75,7 +88,7 @@ namespace utils::math {
     }
 
     template <typename T>
-    inline glm::vec3 operator/(T val, const glm::vec3& vec)
+    constexpr glm::vec3 operator/(T val, const glm::vec3& vec)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
                                                    " must be arithmetical");
@@ -83,7 +96,7 @@ namespace utils::math {
     }
 
     template <typename T>
-    inline glm::vec4 operator/(T val, const glm::vec4& vec)
+    constexpr glm::vec4 operator/(T val, const glm::vec4& vec)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
                                                " must be arithmetical");
@@ -91,7 +104,7 @@ namespace utils::math {
     }
 
     template <typename T>
-    inline glm::vec2 operator/(const glm::vec2& vec, T val)
+    constexpr glm::vec2 operator/(const glm::vec2& vec, T val)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
                                                " must be arithmetical");
@@ -99,7 +112,7 @@ namespace utils::math {
     }
 
     template <typename T>
-    inline glm::vec3 operator/(const glm::vec3& vec, T val)
+    constexpr glm::vec3 operator/(const glm::vec3& vec, T val)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
                                                " must be arithmetical");
@@ -107,7 +120,7 @@ namespace utils::math {
     }
 
     template <typename T>
-    inline glm::vec4 operator/(const glm::vec4& vec, T val)
+    constexpr glm::vec4 operator/(const glm::vec4& vec, T val)
     {
         static_assert(std::is_arithmetic_v<T>, "Template parameter"
                                                " must be arithmetical");

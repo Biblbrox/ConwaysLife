@@ -13,10 +13,10 @@ Entity::getComponents() const
     return m_components;
 }
 
-void Entity::setCesManager(CesManager* cesMan)
-{
-    m_cesManager = cesMan;
-}
+//void Entity::setCesManager(CesManager* cesMan)
+//{
+//    m_cesManager = cesMan;
+//}
 
 bool Entity::isActivate() const
 {

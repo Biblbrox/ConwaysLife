@@ -9,13 +9,13 @@ class CesManager;
 class Component
 {
 public:
-    Component() : m_cesManager(nullptr) {};
+//    Component() : m_cesManager(nullptr) {};
     virtual ~Component() = default;
 
-    virtual void setCesManager(CesManager* cesMan) final;
+//    virtual void setCesManager(CesManager* cesMan) final;
 
 private:
-    CesManager* m_cesManager;
+//    CesManager* m_cesManager;
 };
 
 #endif //COMPONENT_HPP

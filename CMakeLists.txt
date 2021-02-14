@@ -58,6 +58,6 @@ set(SDL2_TTF_LIBRARIES SDL2_ttf)
 add_executable(${GAME_NAME} ${SOURCES})
 target_link_libraries(${GAME_NAME} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES}
         ${SDL2_TTF_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${Boost_LIBRARIES} GLEW
-        libGLEW.so libGLU.so libGL.so imgui)
+        libGLEW.so libGLU.so libGL.so imgui pthread)
 
 target_include_directories(${GAME_NAME} PRIVATE include)
