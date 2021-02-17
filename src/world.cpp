@@ -38,18 +38,9 @@ using utils::fix_coords;
 
 const GLfloat cubeSize = 20.f;
 
-void World::update_text()
-{
-//    if constexpr (debug) {
-//        auto fpsEntity = m_entities["fpsText"];
-//        auto textFps = fpsEntity->getComponent<TextComponent>();
-//        textFps->texture->setText((format("FPS: %+3d") % m_fps.get_fps()).str());
-//    }
-}
-
 World::World() : m_scaled(false), m_wasInit(false),
                  m_cells(boost::extents[6][6][6]),
-                 m_threadCount(get_thread_count())
+                 m_pool(get_thread_count())
 {
     if (!Config::hasKey("FieldSize"))
         Config::addVal("FieldSize", 6, "int");
@@ -89,7 +80,6 @@ void World::update(size_t delta)
     if constexpr (debug)
         m_fps.update();
 
-    update_text();
     if (getGameState() == GameStates::PAUSE
         && !m_timer.isPaused()) {
         m_timer.pause();
@@ -115,7 +105,7 @@ void World::update(size_t delta)
         setGameState(GameStates::PLAY);
         m_timer.start();
         // reinit field
-        init_field();
+        init();
         std::cout << "Timer started" << std::endl;
     }
 
@@ -136,37 +126,26 @@ void World::update(size_t delta)
 
 void World::init()
 {
-    if (!m_wasInit) {
-        createSystem<KeyboardSystem>();
-        createSystem<RendererSystem>();
-        createSystem<AnimationSystem>();
-        createSystem<PhysicsSystem>();
-        createSystem<ParticleRenderSystem>();
+    m_systems.clear();
+    createSystem<KeyboardSystem>();
+    createSystem<RendererSystem>();
+    createSystem<AnimationSystem>();
+    createSystem<PhysicsSystem>();
+    createSystem<ParticleRenderSystem>();
 
-        // Order of initialization is matter
-        init_sound();
-        init_field();
+    m_fieldSize = Config::getVal<int>("FieldSize");
+    init_field();
 
-        m_wasInit = true;
-    }
-
-//    if (m_timer.isStarted() || m_timer.isPaused())
-//        m_timer.stop();
-//
-//    m_timer.start();
-}
-
-void World::init_sound()
-{
-
+    m_wasInit = true;
 }
 
 void World::update_field()
 {
-    GLuint fieldSize = Config::getVal<int>("FieldSize");
-    FieldState new_state(boost::extents[fieldSize][fieldSize][fieldSize]);
+    FieldState new_state(boost::extents[m_fieldSize][m_fieldSize][m_fieldSize]);
 
-    auto func = [this, &new_state](int start, int end){
+    size_t neirCountToDie = Config::getVal<int>("NeirCountDie");
+    size_t neirCountToLife = Config::getVal<int>("NeirCount");
+    auto func = [this, &new_state, neirCountToDie, neirCountToLife](int start, int end){
         for (CellIndex i = start; i < end; ++i) {
             for (CellIndex j = start; j < end; ++j) {
                 for (CellIndex k = start; k < end; ++k) {
@@ -244,7 +223,7 @@ void World::update_field()
                         ++neirCount;
 
                     if (!cell->alive) {
-                        if (neirCount == Config::getVal<int>("NeirCount"))
+                        if (neirCount == neirCountToLife)
                             new_state[i][j][k] = true;
 
                         continue;
@@ -253,31 +232,29 @@ void World::update_field()
                     if (neirCount == 0 || neirCount == 1)
                         new_state[i][j][k] = false;
 
-                    if (neirCount >= Config::getVal<int>("NeirCountDie"))
+                    if (neirCount >= neirCountToDie)
                         new_state[i][j][k] = false;
                 }
             }
         }
     };
 
-    int partSize = m_threadCount / fieldSize;
-    int rem = m_threadCount % fieldSize;
-    std::vector<std::thread> threads;
-    threads.reserve(m_threadCount + 1);
+    int threadCount = m_pool.getThreadsCount();
+    int partSize = threadCount / m_fieldSize;
+    int rem = threadCount % m_fieldSize;
     size_t i;
-    for (i = 0; i < m_threadCount; ++i) {
-        if (i == m_threadCount - 1 && rem != 0)
-            threads.emplace_back(func, i * partSize, fieldSize);
+    for (i = 0; i < threadCount; ++i) {
+        if (i == threadCount - 1 && rem != 0)
+            m_pool.addJob(func, i * partSize, m_fieldSize);
         else
-            threads.emplace_back(func, i * partSize, (i + 1) * partSize);
+            m_pool.addJob(func, i * partSize, (i + 1) * partSize);
     }
 
-    for (auto& thr: threads)
-        thr.join();
+    m_pool.waitForFinish();
 
-    for (i = 0; i < fieldSize; ++i) {
-        for (size_t j = 0; j < fieldSize; ++j) {
-            for (size_t k = 0; k < fieldSize; ++k) {
+    for (i = 0; i < m_fieldSize; ++i) {
+        for (size_t j = 0; j < m_fieldSize; ++j) {
+            for (size_t k = 0; k < m_fieldSize; ++k) {
                 m_cells[i][j][k]->alive = new_state[i][j][k];
             }
         }
@@ -290,22 +267,9 @@ void World::filter_entities()
         it = !it->second->isActivate() ? m_entities.erase(it) : ++it;
 }
 
-TTF_Font* World::open_font(const std::string& fontName, size_t fontSize)
-{
-    TTF_Font* font = TTF_OpenFont(getResourcePath(fontName).c_str(), fontSize);
-    if (!font)
-        throw SdlException((format("Unable to load font %s\nError: %s\n")
-                            % fontName % TTF_GetError()).str(),
-                           program_log_file_name(), Category::INTERNAL_ERROR);
-
-    return font;
-}
-
 void World::init_field()
 {
     using utils::math::cantor_pairing;
-
-    GLuint fieldSize = Config::getVal<int>("FieldSize");
 
     const std::vector<std::array<size_t, 3>> initial_cells = {
             {0, 0, 0},
@@ -325,15 +289,15 @@ void World::init_field()
     GLfloat init_z = 0.f;
 
     m_cells.resize(boost::extents[0][0][0]); // clear array if reinit
-    m_cells.resize(boost::extents[fieldSize][fieldSize][fieldSize]);
+    m_cells.resize(boost::extents[m_fieldSize][m_fieldSize][m_fieldSize]);
 
     std::shared_ptr<Sprite> sprite_com = std::make_shared<Sprite>();
     sprite_com->addTexture(getResourcePath("cube.obj"), cubeSize,
                                cubeSize, cubeSize);
     sprite_com->generateDataBuffer();
-    for (CellIndex i = 0; i < fieldSize; ++i) {
-        for (CellIndex j = 0; j < fieldSize; ++j) {
-            for (CellIndex k = 0; k < fieldSize; ++k) {
+    for (CellIndex i = 0; i < m_fieldSize; ++i) {
+        for (CellIndex j = 0; j < m_fieldSize; ++j) {
+            for (CellIndex k = 0; k < m_fieldSize; ++k) {
                 auto cell = createEntity(cantor_pairing(i, j, k));
                 cell->activate();
                 cell->addComponents<SpriteComponent, CellComponent, PositionComponent>();
@@ -362,7 +326,7 @@ void World::init_field()
 
     // TODO: fix bug
     auto camera = Camera::getInstance();
-    GLfloat pos = fieldSize * (cubeSize + 40);
+    GLfloat pos = m_fieldSize * (cubeSize + 40);
     camera->setPos({pos, pos, pos});
     camera->updateView();
     auto program = LifeProgram::getInstance();

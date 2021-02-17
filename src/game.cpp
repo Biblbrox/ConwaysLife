@@ -3,7 +3,6 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <boost/format.hpp>
-#include <SDL_mixer.h>
 
 #include "game.hpp"
 #include "config.hpp"
@@ -12,10 +11,15 @@
 #include "exceptions/glexception.hpp"
 #include "utils/utils.hpp"
 
+//#define INIT_SOUND
+
+#ifdef INIT_SOUND
+#include <SDL_mixer.h>
 #define FREQUENCY 44100
 #define SAMPLE_FORMAT MIX_DEFAULT_FORMAT
 #define CHUNK_SIZE 2048
 #define NUM_CHANNELS 2
+#endif
 
 static bool imgInit = false;
 static bool mixerInit = false;
@@ -42,8 +46,10 @@ void quit()
         IMG_Quit();
     if (Game::getWindow())
         SDL_DestroyWindow(Game::getWindow());
+#ifdef INIT_SOUND
     if (mixerInit)
         Mix_Quit();
+#endif
 
     SDL_Quit();
 }
@@ -96,6 +102,7 @@ void Game::initOnceSDL2()
 
     imgInit = true;
 
+#ifdef INIT_SOUND
     if (Mix_OpenAudio(FREQUENCY, SAMPLE_FORMAT, NUM_CHANNELS, CHUNK_SIZE) < 0)
         throw SdlException((format("SDL_Mixer initialization error: %1%\n")
                             % Mix_GetError()).str(),
@@ -103,6 +110,7 @@ void Game::initOnceSDL2()
                            Category::INITIALIZATION_ERROR);
 
     mixerInit = true;
+#endif
 
     if (TTF_Init() == -1)
         throw SdlException((format("SDL_TTF initialization error: %1%\n")

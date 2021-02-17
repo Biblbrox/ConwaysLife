@@ -20,8 +20,6 @@ public:
     void update_state(size_t delta) override;
 private:
     void drawSprites();
-    void drawLevel();
-    void drawText();
     void drawToFramebuffer();
 
     GLuint m_frameBufferMSAA;
@@ -34,6 +32,8 @@ private:
 
     bool m_videoSettingsOpen;
     bool m_colorSettingsOpen;
+
+    bool m_isMsaa;
 
     void drawGui();
 };

@@ -105,10 +105,10 @@ render::drawTexture(ShaderProgram& program, const Texture &texture,
                      2.f * position.y / texture.getHeight(),
                      2.f * position.z / texture.getDepth()};
 
-    const glm::vec3 scale = glm::vec3(texture.getWidth(), texture.getHeight(),
-                                      texture.getDepth());
+    const glm::vec3 scale{texture.getWidth(), texture.getHeight(),
+                          texture.getDepth()};
 
-    mat4 translation = translate(mat4(1.f), vec3(pos.x, pos.y, pos.z));
+    mat4 translation = translate(mat4(1.f), {pos.x, pos.y, pos.z});
     mat4 scaling = glm::scale(mat4(1.f), scale);
     program.leftMultModel(scaling * translation);
     program.updateModel();
@@ -119,7 +119,7 @@ render::drawTexture(ShaderProgram& program, const Texture &texture,
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 
-    translation[3] = glm::vec4(-pos.x,  -pos.y, -pos.z, 1);
+    translation[3] = {-pos.x,  -pos.y, -pos.z, 1};
     scaling = glm::scale(mat4(1.f), 1 / scale);
     program.leftMultModel(translation * scaling);
     program.updateModel();

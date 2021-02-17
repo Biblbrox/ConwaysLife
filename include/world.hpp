@@ -5,6 +5,10 @@
 #include <memory>
 #include <string>
 #include <SDL_ttf.h>
+
+#ifdef NDEBUG
+#define BOOST_DISABLE_ASSERTS
+#endif
 #include <boost/multi_array.hpp>
 
 #include "utils/fps.hpp"
@@ -15,6 +19,7 @@
 #include "render/camera.hpp"
 #include "utils/audio.hpp"
 #include "ces/cesmanager.hpp"
+#include "utils/threadpool.hpp"
 #include "components/cellcomponent.hpp"
 
 /**
@@ -41,25 +46,21 @@ private:
     utils::Timer m_timer;
     utils::Fps m_fps;
 
-    void update_text();
     void update_field();
-    void init_sound();
     void init_field();
-
-    TTF_Font* open_font(const std::string& font, size_t fontSize);
 
     /**
      * Remove all entities that not alive
      */
     void filter_entities();
 
-    int m_threadCount;
-
     bool m_scaled;
     const GLfloat m_scaleFactor = 1.5f;
-    utils::audio::Audio m_audio;
 
     Field m_cells;
+    size_t m_fieldSize;
+
+    ThreadPool m_pool;
 
     bool m_wasInit;
 };

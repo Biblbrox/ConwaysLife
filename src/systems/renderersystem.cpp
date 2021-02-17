@@ -83,7 +83,8 @@ throw GLException((boost::format( \
         utils::log::Category::INITIALIZATION_ERROR); \
 
 RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
-                                   m_colorSettingsOpen(false)
+                                   m_colorSettingsOpen(false),
+                                   m_isMsaa(Config::getVal<bool>("MSAA"))
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -162,19 +163,18 @@ void RendererSystem::drawSprites()
 {
     const auto& sprites = m_cesManager->getEntities();
     auto program = LifeProgram::getInstance();
+    const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
+    const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
+    program->setVec4("Color", cellColor);
+    program->setVec4("OutlineColor", borderColor);
     for (const auto& [key, en]: sprites) {
         std::shared_ptr<CellComponent> cell;
         if ((cell = en->getComponent<CellComponent>()))
             if (!cell->alive)
                 continue;
 
-        const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
-        const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
-
         auto posComp = en->getComponent<PositionComponent>();
-        const glm::vec3 pos = glm::vec3(posComp->x, posComp->y, posComp->z);
-        program->setVec4("Color", cellColor);
-        program->setVec4("OutlineColor", borderColor);
+        const glm::vec3 pos = {posComp->x, posComp->y, posComp->z};
         render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite, pos);
     }
 
@@ -205,7 +205,7 @@ void RendererSystem::drawToFramebuffer()
     program->updateProjection();
 
     // Render to texture
-    if (Config::getVal<bool>("MSAA"))
+    if (m_isMsaa)
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferMSAA);
     else
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
@@ -224,8 +224,7 @@ void RendererSystem::drawGui()
     auto screen_height = utils::getWindowHeight<GLfloat>(*Game::getWindow());
 
     auto program = LifeProgram::getInstance();
-    bool msaa = Config::getVal<bool>("MSAA");
-    if (msaa) {
+    if (m_isMsaa) {
         // Render texture to window
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_frameBufferMSAA);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_frameBuffer);
