@@ -23,7 +23,7 @@ namespace utils::log
 
     constexpr const char* program_log_file_name()
     {
-        return "moonlander_log.log";
+        return "life_log.log";
     }
 
     /**

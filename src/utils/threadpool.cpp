@@ -26,7 +26,7 @@ void ThreadPool::loop()
         m_hasJob.wait(lock, [this]{
             return !m_jobs.empty() || m_terminate;
         });
-        if (!m_jobs.empty()) {
+        if (!m_jobs.empty()) { // m_terminate case
             ++m_busy;
             auto job = m_jobs.front();
             m_jobs.pop();

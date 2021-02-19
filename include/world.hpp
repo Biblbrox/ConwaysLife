@@ -29,8 +29,14 @@ class Component;
 
 using utils::type_id;
 
+struct CellState
+{
+    bool alive;
+    glm::vec4 color;
+};
+
 typedef boost::multi_array<std::shared_ptr<CellComponent>, 3> Field;
-typedef boost::multi_array<bool, 3> FieldState;
+typedef boost::multi_array<CellState, 3> FieldState;
 typedef Field::index CellIndex;
 
 class World: public CesManager

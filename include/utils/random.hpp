@@ -21,7 +21,7 @@ namespace utils
     class Random
     {
     public:
-        explicit Random() : m_generator(std::time(nullptr)) {}
+        explicit Random() : m_generator(std::random_device()()){}
 
         /**
          * Fill sequence with unique elements

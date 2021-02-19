@@ -165,6 +165,7 @@ void RendererSystem::drawSprites()
     auto program = LifeProgram::getInstance();
     const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
     const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
+    bool coloredGame = Config::getVal<bool>("ColoredLife");
     program->setVec4("Color", cellColor);
     program->setVec4("OutlineColor", borderColor);
     for (const auto& [key, en]: sprites) {
@@ -173,9 +174,12 @@ void RendererSystem::drawSprites()
             if (!cell->alive)
                 continue;
 
+        if (coloredGame)
+            program->setVec4("Color", cell->color);
+
         auto posComp = en->getComponent<PositionComponent>();
-        const glm::vec3 pos = {posComp->x, posComp->y, posComp->z};
-        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite, pos);
+        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite,
+                            {posComp->x, posComp->y, posComp->z});
     }
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)
@@ -374,6 +378,5 @@ void RendererSystem::drawGui()
     ImGui::End();
 
     ImGui::Render();
-//            ImGui::UpdatePlatformWindows();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
