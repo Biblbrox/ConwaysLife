@@ -1,10 +1,9 @@
 #ifndef MOONLANDER_PHYSICSSYSTEM_HPP
 #define MOONLANDER_PHYSICSSYSTEM_HPP
 
-#include "components/particlespritecomponent.hpp"
-#include "ces/system.hpp"
+#include "ecs/system.hpp"
 
-class PhysicsSystem : public System <ParticleSpriteComponent>
+class PhysicsSystem : public ecs::System <>
 {
 public:
     void update_state(size_t delta) override;

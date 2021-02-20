@@ -126,17 +126,17 @@ void ShaderProgram::setVec4(const std::string& name, const glm::vec4& value)
                           Category::INTERNAL_ERROR);
 }
 
-void ShaderProgram::setProjection(glm::mat4 matrix)
+void ShaderProgram::setProjection(const glm::mat4& matrix)
 {
     m_projectionMatrix = matrix;
 }
 
-void ShaderProgram::setView(glm::mat4 matrix)
+void ShaderProgram::setView(const glm::mat4& matrix)
 {
     m_viewMatrix = matrix;
 }
 
-void ShaderProgram::setModel(glm::mat4 matrix)
+void ShaderProgram::setModel(const glm::mat4& matrix)
 {
     m_modelMatrix = matrix;
 }
@@ -156,32 +156,32 @@ glm::mat4 ShaderProgram::getModel() const
     return m_modelMatrix;
 }
 
-void ShaderProgram::leftMultModel(glm::mat4 matrix)
+void ShaderProgram::leftMultModel(const glm::mat4& matrix)
 {
     m_modelMatrix = matrix * m_modelMatrix;
 }
 
-void ShaderProgram::leftMultView(glm::mat4 matrix)
+void ShaderProgram::leftMultView(const glm::mat4& matrix)
 {
     m_viewMatrix = matrix * m_viewMatrix;
 }
 
-void ShaderProgram::leftMultProjection(glm::mat4 matrix)
+void ShaderProgram::leftMultProjection(const glm::mat4& matrix)
 {
     m_projectionMatrix = matrix * m_projectionMatrix;
 }
 
-void ShaderProgram::multModel(glm::vec4 vec)
+void ShaderProgram::multModel(const glm::vec4& vec)
 {
     m_modelMatrix *= vec;
 }
 
-void ShaderProgram::multView(glm::vec4 vec)
+void ShaderProgram::multView(const glm::vec4& vec)
 {
     m_viewMatrix *= vec;
 }
 
-void ShaderProgram::multProjection(glm::vec4 vec)
+void ShaderProgram::multProjection(const glm::vec4& vec)
 {
     m_projectionMatrix *= vec;
 }

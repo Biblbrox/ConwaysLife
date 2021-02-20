@@ -3,9 +3,9 @@
 
 #include <GL/glew.h>
 
-#include "ces/component.hpp"
+#include "ecs/component.hpp"
 
-struct AnimationComponent : Component
+struct AnimationComponent : ecs::Component
 {
     GLuint cur_state = 0;
 };

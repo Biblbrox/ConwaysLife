@@ -4,7 +4,8 @@
 
 ThreadPool::ThreadPool(size_t threadsCount) : m_threadsCount(threadsCount),
                                               m_busy(0),
-                                              m_terminate(false)
+                                              m_terminate(false),
+                                              m_stopped(false)
 {
     m_pool.reserve(m_threadsCount);
     for (size_t i = 0; i < m_threadsCount; ++i)
@@ -53,7 +54,8 @@ void ThreadPool::shutdown()
     m_hasJob.notify_all();
 
     for (auto& thr : m_pool)
-        thr.join();
+        if (thr.joinable())
+            thr.join();
 
     m_pool.clear();
     m_stopped = true;

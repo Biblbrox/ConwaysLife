@@ -5,7 +5,7 @@
 
 #include "components/velocitycomponent.hpp"
 #include "components/particlespritecomponent.hpp"
-#include "ces/system.hpp"
+#include "ecs/system.hpp"
 #include "components/positioncomponent.hpp"
 
 /**
@@ -13,7 +13,7 @@
  * Position and Direction components, like spaceship
  */
 class MovementSystem: public
-        System<PositionComponent, VelocityComponent, ParticleSpriteComponent>
+        ecs::System<PositionComponent, VelocityComponent, ParticleSpriteComponent>
 {
 public:
     explicit MovementSystem();

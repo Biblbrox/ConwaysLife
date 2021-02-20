@@ -18,6 +18,11 @@ set(CMAKE_CXX_FLAGS_RELEASE_INIT "-fasynchronous-unwind-tables" "-fexceptions"
         "-Wall" "-Werror=format-security" "-Wl,-z,defs" "-Wl,-z,now" "-Wl,-z,relro"
         "-O3" "-std=c++17")
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    add_compile_definitions(BOOST_DISABLE_ASSERTS)
+    message("Hello from release")
+endif (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(SDL2_ttf REQUIRED)

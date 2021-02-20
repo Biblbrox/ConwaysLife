@@ -1,9 +1,9 @@
 #ifndef CELLCOMPONENT_HPP
 #define CELLCOMPONENT_HPP
 
-#include "ces/component.hpp"
+#include "ecs/component.hpp"
 
-struct CellComponent: Component
+struct CellComponent: ecs::Component
 {
     bool alive = false;
     glm::vec4 color;

@@ -4,9 +4,9 @@
 #include <functional>
 #include <SDL_quit.h>
 
-#include "ces/component.hpp"
+#include "ecs/component.hpp"
 
-struct KeyboardComponent : Component
+struct KeyboardComponent : ecs::Component
 {
     std::function<void(const Uint8*)> event_handler;
 };

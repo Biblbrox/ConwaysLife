@@ -38,7 +38,7 @@ using utils::fix_coords;
 
 const GLfloat cubeSize = 20.f;
 
-World::World() : m_scaled(false), m_wasInit(false),
+World::World() : m_wasInit(false),
                  m_cells(boost::extents[6][6][6]),
                  m_pool(get_thread_count())
 {
@@ -377,9 +377,6 @@ void World::init_field()
                          rand.generateu<GLfloat>(0.f, 1.f),
                          rand.generateu<GLfloat>(0.f, 1.f),
                          1.f};
-                std::cout << cellComp->color.x
-                          << cellComp->color.y
-                          << cellComp->color.z << "\n";
                 if (std::count(initial_cells.cbegin(),
                                initial_cells.cend(),
                                std::array<size_t, 3>{(size_t)i, (size_t)j, (size_t)k}) != 0) {

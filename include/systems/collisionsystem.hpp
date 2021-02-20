@@ -5,11 +5,11 @@
 #include "components/spritecomponent.hpp"
 #include "components/levelcomponent.hpp"
 #include "components/positioncomponent.hpp"
-#include "ces/system.hpp"
+#include "ecs/system.hpp"
 
 using glm::vec2;
 
-class CollisionSystem : public System<CollisionComponent, SpriteComponent,
+class CollisionSystem : public ecs::System<CollisionComponent, SpriteComponent,
         LevelComponent, PositionComponent>
 {
     void update_state(size_t delta) override;

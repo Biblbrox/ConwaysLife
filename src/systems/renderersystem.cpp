@@ -161,13 +161,23 @@ RendererSystem::~RendererSystem()
 
 void RendererSystem::drawSprites()
 {
-    const auto& sprites = m_cesManager->getEntities();
+    const auto& sprites = m_ecsManager->getEntities();
     auto program = LifeProgram::getInstance();
     const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
     const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
     bool coloredGame = Config::getVal<bool>("ColoredLife");
-    program->setVec4("Color", cellColor);
+
+    if (!coloredGame)
+        program->setVec4("Color", cellColor);
+
     program->setVec4("OutlineColor", borderColor);
+
+    const auto& sprite = sprites.cbegin()->second->getComponent<SpriteComponent>()
+            ->sprite;
+    GLfloat cellSize = sprite->getWidth();
+    const glm::vec3 scale{cellSize, cellSize, cellSize};
+    mat4 scaling = glm::scale(mat4(1.f), scale);
+    program->leftMultModel(scaling);
     for (const auto& [key, en]: sprites) {
         std::shared_ptr<CellComponent> cell;
         if ((cell = en->getComponent<CellComponent>()))
@@ -178,9 +188,11 @@ void RendererSystem::drawSprites()
             program->setVec4("Color", cell->color);
 
         auto posComp = en->getComponent<PositionComponent>();
-        render::drawTexture(*program, *en->getComponent<SpriteComponent>()->sprite,
-                            {posComp->x, posComp->y, posComp->z});
+        render::drawTexture(*program, *sprite, {posComp->x, posComp->y, posComp->z});
     }
+
+    scaling = glm::scale(mat4(1.f), 1 / scale);
+    program->leftMultModel(scaling);
 
     if (GLenum error = glGetError(); error != GL_NO_ERROR)
         throw GLException((format("\n\tRender while drawing sprites: %1%\n")

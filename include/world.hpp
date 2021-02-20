@@ -5,20 +5,16 @@
 #include <memory>
 #include <string>
 #include <SDL_ttf.h>
-
-#ifdef NDEBUG
-#define BOOST_DISABLE_ASSERTS
-#endif
 #include <boost/multi_array.hpp>
 
 #include "utils/fps.hpp"
 #include "utils/timer.hpp"
 #include "utils/utils.hpp"
-#include "ces/basesystem.hpp"
-#include "ces/entity.hpp"
+#include "ecs/basesystem.hpp"
+#include "ecs/entity.hpp"
 #include "render/camera.hpp"
 #include "utils/audio.hpp"
-#include "ces/cesmanager.hpp"
+#include "ecs/ecsmanager.hpp"
 #include "utils/threadpool.hpp"
 #include "components/cellcomponent.hpp"
 
@@ -26,8 +22,6 @@
  * To avoid circular including
  */
 class Component;
-
-using utils::type_id;
 
 struct CellState
 {
@@ -39,7 +33,7 @@ typedef boost::multi_array<std::shared_ptr<CellComponent>, 3> Field;
 typedef boost::multi_array<CellState, 3> FieldState;
 typedef Field::index CellIndex;
 
-class World: public CesManager
+class World: public ecs::EcsManager
 {
 public:
     World();
@@ -59,9 +53,6 @@ private:
      * Remove all entities that not alive
      */
     void filter_entities();
-
-    bool m_scaled;
-    const GLfloat m_scaleFactor = 1.5f;
 
     Field m_cells;
     size_t m_fieldSize;

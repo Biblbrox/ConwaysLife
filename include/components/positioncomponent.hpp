@@ -3,16 +3,13 @@
 
 #include <GL/glew.h>
 
-#include "ces/component.hpp"
+#include "ecs/component.hpp"
 
-struct PositionComponent : Component
+struct PositionComponent : ecs::Component
 {
     GLfloat x;
     GLfloat y;
     GLfloat z;
-    GLfloat angle;
-    GLfloat scale_factor = 1.f;
-    GLfloat scallable = true;
 };
 
 #endif //MOONLANDER_POSITIONCOMPONENT_HPP

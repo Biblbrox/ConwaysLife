@@ -4,9 +4,9 @@
 #include <memory>
 
 #include "render/texttexture.hpp"
-#include "ces/component.hpp"
+#include "ecs/component.hpp"
 
-struct TextComponent : Component
+struct TextComponent : ecs::Component
 {
     std::shared_ptr<TextTexture> texture;
 };

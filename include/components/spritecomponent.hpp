@@ -2,9 +2,9 @@
 #define MOONLANDER_SPRITECOMPONENT_HPP
 
 #include "render/sprite.hpp"
-#include "ces/component.hpp"
+#include "ecs/component.hpp"
 
-struct SpriteComponent : Component
+struct SpriteComponent : ecs::Component
 {
     std::shared_ptr<Sprite> sprite;
 };

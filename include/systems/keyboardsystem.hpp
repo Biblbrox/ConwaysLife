@@ -2,9 +2,9 @@
 #define MOONLANDER_KEYBOARDSYSTEM_HPP
 
 #include "components/keyboardcomponent.hpp"
-#include "ces/system.hpp"
+#include "ecs/system.hpp"
 
-class KeyboardSystem : public System<KeyboardComponent>
+class KeyboardSystem : public ecs::System<KeyboardComponent>
 {
 public:
     explicit KeyboardSystem();

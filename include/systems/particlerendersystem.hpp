@@ -1,10 +1,9 @@
 #ifndef MOONLANDER_PARTICLERENDERSYSTEM_HPP
 #define MOONLANDER_PARTICLERENDERSYSTEM_HPP
 
-#include "ces/system.hpp"
-#include "components/particlespritecomponent.hpp"
+#include "ecs/system.hpp"
 
-class ParticleRenderSystem : public System<ParticleSpriteComponent>
+class ParticleRenderSystem : public ecs::System<>
 {
 public:
     void update_state(size_t delta) override;

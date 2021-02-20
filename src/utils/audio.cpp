@@ -1,5 +1,6 @@
 #include <boost/format.hpp>
 #include <filesystem>
+#include <cassert>
 
 #include "exceptions/fsexception.hpp"
 #include "exceptions/sdlexception.hpp"

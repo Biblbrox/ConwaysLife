@@ -13,20 +13,20 @@ public:
     virtual ~ShaderProgram();
     virtual void loadProgram() = 0;
 
-    virtual void setProjection(glm::mat4 matrix);
-    virtual void setModel(glm::mat4 matrix);
-    virtual void setView(glm::mat4 matrix);
+    virtual void setProjection(const glm::mat4& matrix);
+    virtual void setModel(const glm::mat4& matrix);
+    virtual void setView(const glm::mat4& matrix);
 
     virtual glm::mat4 getView() const;
     virtual glm::mat4 getModel() const;
     virtual glm::mat4 getProjection() const;
 
-    virtual void leftMultView(glm::mat4 matrix);
-    virtual void leftMultModel(glm::mat4 matrix);
-    virtual void leftMultProjection(glm::mat4 matrix);
-    virtual void multModel(glm::vec4 vec);
-    virtual void multView(glm::vec4 vec);
-    virtual void multProjection(glm::vec4 vec);
+    virtual void leftMultView(const glm::mat4& matrix);
+    virtual void leftMultModel(const glm::mat4& matrix);
+    virtual void leftMultProjection(const glm::mat4& matrix);
+    virtual void multModel(const glm::vec4& vec);
+    virtual void multView(const glm::vec4& vec);
+    virtual void multProjection(const glm::vec4& vec);
 
     virtual void updateProjection() = 0;
     virtual void updateView() = 0;
