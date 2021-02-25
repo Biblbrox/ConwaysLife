@@ -69,8 +69,8 @@ namespace ecs
             static_assert(types::IsBaseOfRec<Component, types::TypeList<ComponentTypes...>>::value,
                           "Template parameter class must be child of Component");
             using ComponentList = types::TypeList<ComponentTypes...>;
-            static_assert(types::Length<ComponentList>::value >= 2,
-                          "Length of ComponentTypes must be greeter than 2");
+            static_assert(types::Length<ComponentList>::value >= 1,
+                          "Length of ComponentTypes must be greeter than 1");
 
             auto bin = [](auto x, auto y) { return 0; };
 

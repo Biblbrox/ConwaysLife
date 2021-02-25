@@ -3,11 +3,9 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-in vec2 TextureCoords[3];
 in vec3 VerPos[3];
 
 flat out int isBorder;
-out vec2 TextureCoordsFrag;
 out vec3 VerPosFrag;
 
 bool cmpf(float left, float right)
@@ -29,17 +27,14 @@ void main()
     }
 
     gl_Position = gl_in[0].gl_Position;
-    TextureCoordsFrag = TextureCoords[0];
     VerPosFrag = VerPos[0];
     EmitVertex();
 
     gl_Position = gl_in[1].gl_Position;
-    TextureCoordsFrag = TextureCoords[1];
     VerPosFrag = VerPos[1];
     EmitVertex();
 
     gl_Position = gl_in[2].gl_Position;
-    TextureCoordsFrag = TextureCoords[2];
     VerPosFrag = VerPos[2];
     EmitVertex();
 

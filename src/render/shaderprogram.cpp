@@ -156,6 +156,21 @@ glm::mat4 ShaderProgram::getModel() const
     return m_modelMatrix;
 }
 
+glm::mat4& ShaderProgram::getView()
+{
+    return m_viewMatrix;
+}
+
+glm::mat4& ShaderProgram::getProjection()
+{
+    return m_projectionMatrix;
+}
+
+glm::mat4& ShaderProgram::getModel()
+{
+    return m_modelMatrix;
+}
+
 void ShaderProgram::leftMultModel(const glm::mat4& matrix)
 {
     m_modelMatrix = matrix * m_modelMatrix;

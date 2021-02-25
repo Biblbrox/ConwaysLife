@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <iostream>
+#include <omp.h>
 
 #include "systems/renderersystem.hpp"
 #include "components/spritecomponent.hpp"
@@ -108,9 +109,9 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
     int screen_height = utils::getWindowHeight<GLuint>(*Game::getWindow());
     m_aspectRatio = static_cast<GLfloat>(screen_width) / screen_height;
 
-    bool msaa = Config::getVal<bool>("MSAA");
+    m_fieldSize = Config::getVal<int>("FieldSize");
 
-    if (msaa) {
+    if (m_isMsaa) {
         // Generate multisampled framebuffer
         glGenFramebuffers(1, &m_frameBufferMSAA);
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferMSAA);
@@ -163,33 +164,39 @@ void RendererSystem::drawSprites()
 {
     const auto& sprites = m_ecsManager->getEntities();
     auto program = LifeProgram::getInstance();
-    const glm::vec4 borderColor = Config::getVal<glm::vec4>("CellBorderColor");
-    const glm::vec4 cellColor = Config::getVal<glm::vec4>("CellColor");
+    const glm::vec4& borderColor = Config::getVal<glm::vec4>("CellBorderColor");
+    const glm::vec4& cellColor = Config::getVal<glm::vec4>("CellColor");
     bool coloredGame = Config::getVal<bool>("ColoredLife");
 
     if (!coloredGame)
-        program->setVec4("Color", cellColor);
+        program->setVec3("Color", cellColor);
 
-    program->setVec4("OutlineColor", borderColor);
+    program->setVec3("OutlineColor", borderColor);
 
-    const auto& sprite = sprites.cbegin()->second->getComponent<SpriteComponent>()
-            ->sprite;
+    const auto& sprite = World::m_cells[0][0][0].sprite;
     GLfloat cellSize = sprite->getWidth();
     const glm::vec3 scale{cellSize, cellSize, cellSize};
     mat4 scaling = glm::scale(mat4(1.f), scale);
     program->leftMultModel(scaling);
-    for (const auto& [key, en]: sprites) {
-        std::shared_ptr<CellComponent> cell;
-        if ((cell = en->getComponent<CellComponent>()))
-            if (!cell->alive)
-                continue;
 
-        if (coloredGame)
-            program->setVec4("Color", cell->color);
+//    glBindTexture(GL_TEXTURE_2D, sprite->getTextureID());
+    glBindVertexArray(sprite->getVAO());
+    const auto& cells = World::m_cells;
+    for (CellIndex i = 1; i < m_fieldSize + 1; ++i) {
+        for (CellIndex j = 1; j < m_fieldSize + 1; ++j) {
+            for (CellIndex k = 1; k < m_fieldSize + 1; ++k) {
+                if (!cells[i][j][k].alive)
+                    continue;
 
-        auto posComp = en->getComponent<PositionComponent>();
-        render::drawTexture(*program, *sprite, {posComp->x, posComp->y, posComp->z});
+                if (coloredGame)
+                    program->setVec3("Color", cells[i][j][k].color);
+
+                render::drawTexture(*program, *sprite, cells[i][j][k].pos);
+            }
+        }
     }
+//    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
 
     scaling = glm::scale(mat4(1.f), 1 / scale);
     program->leftMultModel(scaling);

@@ -32,6 +32,7 @@ private:
 
     bool m_videoSettingsOpen;
     bool m_colorSettingsOpen;
+    size_t m_fieldSize;
 
     bool m_isMsaa;
 

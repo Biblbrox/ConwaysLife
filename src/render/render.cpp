@@ -125,28 +125,6 @@ render::drawTextureScale(ShaderProgram& program, const Texture &texture,
     program.updateModel();
 }
 
-void render::drawTexture(ShaderProgram& program, const Texture &texture,
-                         const glm::vec3& position)
-{
-    assert(texture.getVAO() != 0);
-
-    glm::vec3 pos = 2.f * position;
-
-    mat4 translation = translate(mat4(1.f), {pos.x, pos.y, pos.z});
-    program.leftMultModel(translation);
-    program.updateModel();
-
-    glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
-    glBindVertexArray(texture.getVAO());
-    glDrawArrays(GL_TRIANGLES, 0, 1665);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
-
-    translation[3] = {-pos.x,  -pos.y, -pos.z, 1};
-    program.leftMultModel(translation);
-    program.updateModel();
-}
-
 void render::drawTriangles(const std::vector<vec2>& points)
 {
     assert(points.size() % 3 == 0);

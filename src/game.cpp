@@ -195,19 +195,18 @@ void Game::initGL()
     //Initialize clear color
     glClearColor(0.f, 0.f, 0.f, 1.f);
 
-    glEnable(GL_LINE_SMOOTH);
-    glEnable(GL_POLYGON_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-    glLineWidth(1.0f);
-    glEnable(GL_BLEND);
+//    glEnable(GL_LINE_SMOOTH);
+//    glEnable(GL_POLYGON_SMOOTH);
+//    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+//    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+//    glEnable(GL_BLEND);
 
     if (Config::getVal<bool>("MSAA"))
         glEnable(GL_MULTISAMPLE);
 
     glDisable(GL_DEPTH_CLAMP);
     glEnable(GL_DEPTH_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //Use Vsync
     if(SDL_GL_SetSwapInterval(-1) < 0) {
         Logger::write(program_log_file_name(),

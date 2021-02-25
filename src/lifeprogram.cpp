@@ -35,7 +35,7 @@ const char* textureNumberGL = "TextureNum";
 
 LifeProgram::LifeProgram()
 {
-    m_isTextureRender = false;
+//    m_isTextureRender = false;
     m_texLoc = 0;
     m_colorLoc = 0;
 }
@@ -128,7 +128,7 @@ void LifeProgram::loadProgram()
 
 void LifeProgram::setTexture(int texture)
 {
-    glUniform1i(m_texLoc, texture);
+//    glUniform1i(m_texLoc, texture);
 }
 
 LifeProgram::~LifeProgram()
@@ -139,14 +139,14 @@ LifeProgram::~LifeProgram()
 
 void LifeProgram::rebindUniforms()
 {
-    m_texLoc = glGetUniformLocation(m_programID, textureNumberGL);
-    if (m_texLoc == -1) {
-        utils::log::printProgramLog(m_programID);
-        throw GLException((format("%s is not a valid glsl program variable!\n")
-                           % textureNumberGL).str(),
-                          program_log_file_name(),
-                          Category::INTERNAL_ERROR);
-    }
+//    m_texLoc = glGetUniformLocation(m_programID, textureNumberGL);
+//    if (m_texLoc == -1) {
+//        utils::log::printProgramLog(m_programID);
+//        throw GLException((format("%s is not a valid glsl program variable!\n")
+//                           % textureNumberGL).str(),
+//                          program_log_file_name(),
+//                          Category::INTERNAL_ERROR);
+//    }
 }
 
 void LifeProgram::remove_programs()

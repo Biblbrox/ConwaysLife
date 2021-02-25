@@ -21,6 +21,10 @@ public:
     virtual glm::mat4 getModel() const;
     virtual glm::mat4 getProjection() const;
 
+    virtual glm::mat4& getView();
+    virtual glm::mat4& getModel();
+    virtual glm::mat4& getProjection();
+
     virtual void leftMultView(const glm::mat4& matrix);
     virtual void leftMultModel(const glm::mat4& matrix);
     virtual void leftMultProjection(const glm::mat4& matrix);

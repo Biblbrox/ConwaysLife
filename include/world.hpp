@@ -13,7 +13,6 @@
 #include "ecs/basesystem.hpp"
 #include "ecs/entity.hpp"
 #include "render/camera.hpp"
-#include "utils/audio.hpp"
 #include "ecs/ecsmanager.hpp"
 #include "utils/threadpool.hpp"
 #include "components/cellcomponent.hpp"
@@ -26,11 +25,12 @@ class Component;
 struct CellState
 {
     bool alive;
-    glm::vec4 color;
+    glm::vec3 color;
+    char neirCount;
 };
 
-typedef boost::multi_array<std::shared_ptr<CellComponent>, 3> Field;
-typedef boost::multi_array<CellState, 3> FieldState;
+typedef boost::multi_array<CellComponent, 3> Field;
+typedef boost::multi_array<CellComponent, 3> FieldState;
 typedef Field::index CellIndex;
 
 class World: public ecs::EcsManager
@@ -42,11 +42,13 @@ public:
     void init() override;
     void update(size_t delta) override;
 
+    static Field m_cells;
 private:
     utils::Timer m_timer;
     utils::Fps m_fps;
 
     void update_field();
+    void update_field_omp();
     void init_field();
 
     /**
@@ -54,9 +56,9 @@ private:
      */
     void filter_entities();
 
-    Field m_cells;
     size_t m_fieldSize;
 
+    Field m_newState;
     ThreadPool m_pool;
 
     bool m_wasInit;

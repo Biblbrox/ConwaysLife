@@ -63,6 +63,12 @@ public:
         return std::any_cast<T&>(m_values[key]);
     }
 
+//    template<class T>
+//    static const T& getVal(const std::string& key)
+//    {
+//        return std::any_cast<const T&>(m_values[key]);
+//    }
+//
     static void save(const std::string& file)
     {
         std::ofstream out(file);
