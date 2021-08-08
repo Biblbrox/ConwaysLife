@@ -99,9 +99,11 @@ GLuint create_program(const std::string& vertex, const std::string& fragment,
 void LifeProgram::loadProgram()
 {
     // Create framebuffer program
+//    m_frameBufProg = create_program("framebuffer/LifeGame.glvs",
+//                                    "framebuffer/LifeGame.glfs",
+//                                    "framebuffer/LifeGame.glgs");
     m_frameBufProg = create_program("framebuffer/LifeGame.glvs",
-                                    "framebuffer/LifeGame.glfs",
-                                    "framebuffer/LifeGame.glgs");
+                                    "framebuffer/LifeGame.glfs");
 
     // Get block indices
     GLuint matrixLoc = glGetUniformBlockIndex(m_frameBufProg, "Matrices");
@@ -172,14 +174,15 @@ void LifeProgram::free_buffers()
 
 void LifeProgram::updateProjection()
 {
-    if (m_programID != m_frameBufProg)
-        return;
+//    if (m_programID != m_frameBufProg)
+//        return;
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 0,
                     sizeof(glm::mat4), glm::value_ptr(m_projectionMatrix));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+#ifndef NDEBUG
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
         utils::log::printProgramLog(m_programID);
         throw GLException((format("Error while updating matricesUBO(m_projectionMatrix)! %s\n")
@@ -187,18 +190,20 @@ void LifeProgram::updateProjection()
                           program_log_file_name(),
                           Category::INTERNAL_ERROR);
     }
+#endif
 }
 
 void LifeProgram::updateModel()
 {
-    if (m_programID != m_frameBufProg)
-        return;
+//    if (m_programID != m_frameBufProg)
+//        return;
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4),
                     sizeof(glm::mat4), glm::value_ptr(m_modelMatrix));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+#ifndef NDEBUG
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
         utils::log::printProgramLog(m_programID);
         throw GLException((format("Error while updating matricesUBO(m_modelMatrix)! %s\n")
@@ -206,18 +211,20 @@ void LifeProgram::updateModel()
                           program_log_file_name(),
                           Category::INTERNAL_ERROR);
     }
+#endif
 }
 
 void LifeProgram::updateView()
 {
-    if (m_programID != m_frameBufProg)
-        return;
+//    if (m_programID != m_frameBufProg)
+//        return;
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4),
                     sizeof(mat4), glm::value_ptr(m_viewMatrix));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+#ifndef NDEBUG
     if (GLenum error = glGetError(); error != GL_NO_ERROR) {
         utils::log::printProgramLog(m_programID);
         throw GLException((format("Error while updating"
@@ -226,6 +233,7 @@ void LifeProgram::updateView()
                           program_log_file_name(),
                           Category::INTERNAL_ERROR);
     }
+#endif
 }
 
 void LifeProgram::useScreenProgram()

@@ -5,14 +5,14 @@
 
 void KeyboardSystem::update_state(size_t delta)
 {
-    int screen_width = utils::getWindowWidth<int>(*Game::getWindow());
-    int screen_height = utils::getWindowHeight<int>(*Game::getWindow());
+    int screen_width;
+    int screen_height;
 
     GLfloat x_offset = 0.f;
     GLfloat y_offset = 0.f;
     SDL_Event e;
-    auto camera = Camera::getInstance();
-    auto program = LifeProgram::getInstance();
+    const auto& camera = Camera::getInstance();
+    const auto& program = LifeProgram::getInstance();
     bool stopped = getGameState() == GameStates::STOP;
     while (SDL_PollEvent(&e)) {
         program->useFramebufferProgram();
@@ -38,6 +38,8 @@ void KeyboardSystem::update_state(size_t delta)
                 break;
             case SDL_MOUSEWHEEL:
                 if (!stopped) {
+                    screen_width = utils::getWindowWidth<int>(*Game::getWindow());
+                    screen_height = utils::getWindowHeight<int>(*Game::getWindow());
                     camera->processScroll(e.wheel.y / 10.f);
                     program->setProjection(camera->getProjection(screen_width,
                                                                  screen_height));
@@ -46,6 +48,8 @@ void KeyboardSystem::update_state(size_t delta)
                 break;
             case SDL_WINDOWEVENT:
                 if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    screen_width = utils::getWindowWidth<int>(*Game::getWindow());
+                    screen_height = utils::getWindowHeight<int>(*Game::getWindow());
                     glViewport(0.f, 0.f, screen_width, screen_height);
                     program->setProjection(camera->getProjection(screen_width,
                                                                  screen_height));

@@ -22,16 +22,9 @@
  */
 class Component;
 
-struct CellState
-{
-    bool alive;
-    glm::vec3 color;
-    char neirCount;
-};
-
-typedef boost::multi_array<CellComponent, 3> Field;
-typedef boost::multi_array<CellComponent, 3> FieldState;
-typedef Field::index CellIndex;
+typedef boost::multi_array<CellComponent, 3> FieldType;
+typedef std::array<std::shared_ptr<FieldType>, 2> Field; // Flip-flop buffer
+typedef FieldType::index CellIndex;
 
 class World: public ecs::EcsManager
 {
@@ -48,7 +41,6 @@ private:
     utils::Fps m_fps;
 
     void update_field();
-    void update_field_omp();
     void init_field();
 
     /**
@@ -58,7 +50,6 @@ private:
 
     size_t m_fieldSize;
 
-    Field m_newState;
     ThreadPool m_pool;
 
     bool m_wasInit;

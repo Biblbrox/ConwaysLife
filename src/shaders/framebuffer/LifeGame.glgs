@@ -8,19 +8,19 @@ in vec3 VerPos[3];
 flat out int isBorder;
 out vec3 VerPosFrag;
 
-bool cmpf(float left, float right)
-{
-    const float eps = 0.001;
-    return abs(left - right) < eps;
-}
+//bool cmpf(float left, float right)
+//{
+//    const float eps = 0.001;
+//    return abs(left - right) < eps;
+//}
 
 void main()
 {
-    if (   (cmpf(abs(VerPos[0].x), 1.f)   && cmpf(abs(VerPos[0].y), 1.f)
-         && cmpf(abs(VerPos[0].z), 1.f)) || (cmpf(abs(VerPos[1].x), 1.f)
-         && cmpf(abs(VerPos[1].y), 1.f)   && cmpf(abs(VerPos[1].z), 1.f))
-        || (cmpf(abs(VerPos[2].x), 1.f)   && cmpf(abs(VerPos[2].y), 1.f)
-         && cmpf(abs(VerPos[2].z), 1.f))) {
+    if ((abs(VerPos[0].x) > 0.95  && abs(VerPos[0].y) > 0.95f
+    && abs(VerPos[0].z) > 0.95f) || (abs(VerPos[1].x) > 0.95f
+    && abs(VerPos[1].y) > 0.95f  && abs(VerPos[1].z) > 0.95f)
+    || (abs(VerPos[2].x) > 0.95f  && abs(VerPos[2].y) > 0.95f
+    && abs(VerPos[2].z) > 0.95f)) {
         isBorder = 1;
     } else {
         isBorder = 0;

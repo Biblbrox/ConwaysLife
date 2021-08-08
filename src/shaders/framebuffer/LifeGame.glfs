@@ -1,17 +1,17 @@
 #version 330 core
-
-in vec3 VerPosFrag;
-flat in int isBorder;
+//#extension GL_ARB_conservative_depth : enable
+//layout (depth_less) out float gl_FragDepth;
+//flat in int isBorder;
 
 uniform vec3 Color;
-uniform vec3 OutlineColor;
+//uniform vec3 OutlineColor;
 
 out vec4 FragColor;
 
 void main()
 {
-    if (isBorder == 1)
-        FragColor = vec4(OutlineColor, 1.f);
-    else
+//    if (isBorder == 1)
+//        FragColor = vec4(OutlineColor, 1.f);
+//    else
         FragColor = vec4(Color, 1.f);
 }

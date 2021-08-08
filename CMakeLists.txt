@@ -17,8 +17,9 @@ set(CMAKE_CXX_FLAGS_RELEASE_INIT "-fasynchronous-unwind-tables" "-fexceptions"
         "-fpie" "-Wl,-pie" "-fpic" "-shared" "-fstack-clash-protection"
         "-fstack-protector" "-fstack-protector-strong" "-fcf-protection" "-pipe"
         "-Wall" "-Werror=format-security" "-Wl,-z,defs" "-Wl,-z,now" "-Wl,-z,relro"
-        "-O3" "-std=c++17"
-        "-fopt-info-vec-missed" "-funroll-loops" "-ftree-vectorize"
+        "-O2" "-std=c++17"
+        "-fopt-info-vec-missed"  "-ftree-vectorize"
+        #"-funroll-loops" "-g"
         )
 
 #if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
@@ -27,9 +28,9 @@ message("Hello from release")
 #endif (${CMAKE_BUILD_TYPE} STREQUAL "Release")
 
 find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-find_package(SDL2_mixer REQUIRED)
+#find_package(SDL2_image REQUIRED)
+#find_package(SDL2_ttf REQUIRED)
+#find_package(SDL2_mixer REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(GLM REQUIRED)
@@ -65,8 +66,8 @@ set(SOURCES ${HPP} ${CPP})
 set(SDL2_TTF_LIBRARIES SDL2_ttf)
 
 add_executable(${GAME_NAME} ${SOURCES})
-target_link_libraries(${GAME_NAME} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES}
-        ${SDL2_TTF_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${Boost_LIBRARIES} GLEW
+target_link_libraries(${GAME_NAME} ${SDL2_LIBRARIES}
+        ${Boost_LIBRARIES} GLEW
         libGLEW.so libGLU.so libGL.so imgui pthread OpenMP::OpenMP_CXX)
 
 target_include_directories(${GAME_NAME} PRIVATE include)

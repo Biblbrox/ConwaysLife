@@ -49,10 +49,11 @@ int main(int argc, char *args[])
         GLfloat last_frame = 0.f;
 
         bool firstRun = true;
+        delta_time = 0;
         while (isGameRunnable()) {
-            GLfloat cur_time = SDL_GetTicks();
-            delta_time = cur_time - last_frame;
-            last_frame = cur_time;
+//            GLfloat cur_time = SDL_GetTicks();
+//            delta_time = cur_time - last_frame;
+//            last_frame = cur_time;
 
             // Draw scene
             game.update(delta_time);

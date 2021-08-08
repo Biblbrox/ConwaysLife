@@ -34,21 +34,18 @@ namespace render
                           const glm::vec3& pos);
 
     void inline drawTexture(ShaderProgram& program, const Texture &texture,
-                             const glm::vec3& position)
+                            const glm::vec3& position)
     {
         assert(texture.getVAO() != 0);
 
-        glm::vec3 pos = 2.f * position;
-
         mat4& model = program.getModel();
-        model[3] += glm::vec4(pos.x,  pos.y, pos.z, 0);
+        model[3] += glm::vec4(position.x,  position.y, position.z, 0);
 
         program.updateModel();
 
-//        glDrawArrays(GL_TRIANGLES, 0, 105);
-        glDrawElements(GL_TRIANGLES, 333, GL_UNSIGNED_INT, nullptr);
+        glDrawRangeElements(GL_TRIANGLES, 0, 36, 36, GL_UNSIGNED_INT, nullptr);
 
-        model[3] += glm::vec4(-pos.x,  -pos.y, -pos.z, 0);
+        model[3] += glm::vec4(-position.x,  -position.y, -position.z, 0);
 
         program.updateModel();
     }

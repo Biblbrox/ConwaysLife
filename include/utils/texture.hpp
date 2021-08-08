@@ -44,54 +44,54 @@ namespace utils::texture {
      * @param surface
      * @return
      */
-    constexpr GLenum getSurfaceFormatInfo(const SDL_Surface &surface) noexcept
-    {
-        GLenum format = 0;
-        GLint color_num = surface.format->BytesPerPixel;
-        if (color_num == 4) {     // contains an alpha channel
-            if (surface.format->Rmask == 0x000000ff)
-                format = GL_RGBA;
-            else
-                format = GL_BGRA;
-        } else if (color_num == 3) {     // no alpha channel
-            if (surface.format->Rmask == 0x000000ff)
-                format = GL_RGB;
-            else
-                format = GL_BGR;
-        }
-
-        return format;
-    }
+//    constexpr GLenum getSurfaceFormatInfo(const SDL_Surface &surface) noexcept
+//    {
+//        GLenum format = 0;
+//        GLint color_num = surface.format->BytesPerPixel;
+//        if (color_num == 4) {     // contains an alpha channel
+//            if (surface.format->Rmask == 0x000000ff)
+//                format = GL_RGBA;
+//            else
+//                format = GL_BGRA;
+//        } else if (color_num == 3) {     // no alpha channel
+//            if (surface.format->Rmask == 0x000000ff)
+//                format = GL_RGB;
+//            else
+//                format = GL_BGR;
+//        }
+//
+//        return format;
+//    }
 
     /**
     * Flip vertically SDL_Surface
     * @param sfc
     * @return
     */
-    inline SDL_Surface* flipVertically(const SDL_Surface* const sfc)
-    {
-        assert(sfc);
-        SDL_Surface *result =
-                SDL_CreateRGBSurface(sfc->flags, sfc->w, sfc->h,
-                                     sfc->format->BytesPerPixel * 8,
-                                     sfc->format->Rmask,
-                                     sfc->format->Gmask,
-                                     sfc->format->Bmask, sfc->format->Amask);
-        // Number of pixels per row
-        const auto pitch = sfc->pitch;
-        // Total number of pixels
-        const auto pxlength = pitch * (sfc->h - 1);
-        // Right end pixels
-        auto pixels = static_cast<unsigned char *>(sfc->pixels) + pxlength;
-        // Left pixels
-        auto rpixels = static_cast<unsigned char *>(result->pixels);
-        for (auto line = 0; line < sfc->h; ++line) {
-            memcpy(rpixels, pixels, pitch);
-            pixels -= pitch;
-            rpixels += pitch;
-        }
-
-        return result;
-    }
+//    inline SDL_Surface* flipVertically(const SDL_Surface* const sfc)
+//    {
+//        assert(sfc);
+//        SDL_Surface *result =
+//                SDL_CreateRGBSurface(sfc->flags, sfc->w, sfc->h,
+//                                     sfc->format->BytesPerPixel * 8,
+//                                     sfc->format->Rmask,
+//                                     sfc->format->Gmask,
+//                                     sfc->format->Bmask, sfc->format->Amask);
+//         Number of pixels per row
+//        const auto pitch = sfc->pitch;
+//         Total number of pixels
+//        const auto pxlength = pitch * (sfc->h - 1);
+//         Right end pixels
+//        auto pixels = static_cast<unsigned char *>(sfc->pixels) + pxlength;
+//         Left pixels
+//        auto rpixels = static_cast<unsigned char *>(result->pixels);
+//        for (auto line = 0; line < sfc->h; ++line) {
+//            memcpy(rpixels, pixels, pitch);
+//            pixels -= pitch;
+//            rpixels += pitch;
+//        }
+//
+//        return result;
+//    }
 }
 #endif //UTILS_TEXTURE_HPP

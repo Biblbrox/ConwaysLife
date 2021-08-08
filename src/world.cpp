@@ -16,7 +16,6 @@
 #include "components/cellcomponent.hpp"
 #include "components/spritecomponent.hpp"
 #include "systems/renderersystem.hpp"
-#include "components/textcomponent.hpp"
 #include "systems/keyboardsystem.hpp"
 #include "systems/animationsystem.hpp"
 #include "systems/physicssystem.hpp"
@@ -37,13 +36,15 @@ using std::cos;
 using std::find_if;
 using utils::fix_coords;
 
-const GLfloat cubeSize = 20.f;
+//const GLfloat cubeSize = 20.f;
+const GLfloat cubeSize = 2.f;
 
 Field World::m_cells;
 
 World::World() : m_wasInit(false),
 //                 m_cells(boost::extents[6][6][6]),
-                 m_pool(get_thread_count()) {
+                 m_pool(get_thread_count())
+                 {
     if (!Config::hasKey("FieldSize"))
         Config::addVal("FieldSize", 6, "int");
     if (!Config::hasKey("StepTime"))
@@ -72,13 +73,15 @@ World::World() : m_wasInit(false),
         Config::addVal("ColoredLife", false, "bool");
 }
 
-World::~World() {
+World::~World()
+{
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 }
 
-void World::update(size_t delta) {
+void World::update(size_t delta)
+{
 //    if constexpr (debug)
 //        m_fps.update();
 
@@ -111,8 +114,8 @@ void World::update(size_t delta) {
         GLfloat stepTime = Config::getVal<GLfloat>("StepTime");
         if (m_timer.getTicks() / 1000.f > stepTime) {
             m_timer.stop();
+            update_field();
             m_timer.start();
-            update_field_omp();
         }
     }
 //    filter_entities();
@@ -120,7 +123,11 @@ void World::update(size_t delta) {
         system.second->update(delta);
 }
 
-void World::init() {
+void World::init()
+{
+    m_fieldSize = Config::getVal<int>("FieldSize");
+    init_field();
+
     m_systems.clear();
     createSystem<KeyboardSystem>();
     createSystem<RendererSystem>();
@@ -128,96 +135,10 @@ void World::init() {
     createSystem<PhysicsSystem>();
     createSystem<ParticleRenderSystem>();
 
-    m_fieldSize = Config::getVal<int>("FieldSize");
-    init_field();
-
     m_wasInit = true;
 }
 
-void World::update_field() {
-    size_t neirCountToDie = Config::getVal<int>("NeirCountDie");
-    size_t neirCountToLife = Config::getVal<int>("NeirCount");
-    auto task = [this, neirCountToDie, neirCountToLife](int start, int end) {
-        using namespace utils::math;
-        glm::vec3 color = {0.f, 0.f, 0.f};
-        unsigned char neirCount = 0;
-        CellIndex i, j, k;
-        bool alive;
-        int indices_offsets[][3] = {
-                {0,  1,  0},
-                {0,  -1, 0},
-                {-1, 0,  0},
-                {1,  0,  0},
-                {0,  0,  1},
-                {-0, 0,  -1},
-                {-1, 1,  -1},
-                {1,  1,  -1},
-                {1,  1,  1},
-                {-1, 1,  1},
-                {-1, -1, -1},
-                {1,  -1, -1},
-                {1,  -1, 1},
-                {-1, -1, 1}
-        };
-
-        for (i = start; i < end; ++i) {
-            for (j = start; j < end; ++j) {
-                for (k = start; k < end; ++k) {
-                    color = {0.f, 0.f, 0.f};
-                    neirCount = 0;
-                    alive = m_cells[i][j][k].alive;
-                    auto &cell = m_cells[i][j][k];
-                    for (const auto&[x, y, z]: indices_offsets) {
-                        if ((i + x >= end || i + x < start)
-                            || (j + y >= end || j + y < start)
-                            || (k + z >= end || k + z < start))
-                            continue;
-
-                        if (m_cells[i + x][j + y][k + z].alive) {
-                            ++neirCount;
-                            color += m_cells[i + x][j + y][k + z].color;
-                        }
-
-                        if ((alive && neirCount >= neirCountToDie))
-                            break;
-                    }
-
-                    // Dead case
-                    if (!alive) {
-                        if (neirCount >= neirCountToLife) { // Now alive!!!
-                            m_newState[i][j][k].alive = true;
-                            m_newState[i][j][k].pos = cell.pos;
-                            m_newState[i][j][k].color = color / neirCount;
-                        }
-
-                        continue;
-                    }
-
-                    // Life case
-                    if (neirCount >= neirCountToDie)
-                        m_newState[i][j][k].alive = false;
-                }
-            }
-        }
-    };
-
-    int threadCount = m_pool.getThreadsCount();
-    int partSize = threadCount / m_fieldSize;
-    int rem = threadCount % m_fieldSize;
-    size_t i;
-    for (i = 0; i < threadCount; ++i) {
-        if (i == threadCount - 1 && rem != 0)
-            m_pool.addJob(task, i * partSize, m_fieldSize);
-        else
-            m_pool.addJob(task, i * partSize, (i + 1) * partSize);
-    }
-
-    m_pool.waitForFinish();
-
-    m_cells = m_newState;
-}
-
-void World::update_field_omp()
+void World::update_field()
 {
     size_t neirCountToDie = Config::getVal<int>("NeirCountDie");
     size_t neirCountToLife = Config::getVal<int>("NeirCount");
@@ -239,49 +160,36 @@ void World::update_field_omp()
             {1,  -1, 1},
             {-1, -1, 1}
     };
-#pragma omp parallel for collapse(3)
+    glm::vec3 color = {0.f, 0.f, 0.f};
+    int8_t neirCount = 0;
+
+    auto& old_buffer = (*m_cells[1]);
+    const auto& cur_buffer = (*m_cells[0]);
+#pragma omp parallel for collapse(3) shared(indices_offsets) private(color, neirCount)
     for (CellIndex i = 1; i < m_fieldSize + 1; ++i) {
         for (CellIndex j = 1; j < m_fieldSize + 1; ++j) {
             for (CellIndex k = 1; k < m_fieldSize + 1; ++k) {
-                glm::vec3 color = {0.f, 0.f, 0.f};
-                int neirCount = 0;
+                color = {0.f, 0.f, 0.f};
+                neirCount = 0;
 
-                bool alive = m_cells[i][j][k].alive;
-                auto &cell = m_cells[i][j][k];
+                int8_t alive = cur_buffer[i][j][k].alive;
                 for (const auto&[x, y, z]: indices_offsets) {
-                    if (m_cells[i + x][j + y][k + z].alive) {
-                        ++neirCount;
-                        color += m_cells[i + x][j + y][k + z].color;
-                    }
+                    const auto &cell = cur_buffer[i + x][j + y][k + z];
+                    neirCount += cell.alive;
+                    color += cell.color;
 
                     if ((alive && neirCount >= neirCountToDie))
-                        break;
+                        old_buffer[i][j][k] = {false, {0.f, 0.f, 0.f}};
                 }
 
                 // Dead case
-                if (!alive) {
-                    if (neirCount >= neirCountToLife) // Now alive!!!
-                        m_newState[i][j][k] = {true, color / neirCount, cell.pos};
-
-                    continue;
-                }
-
-                // Life case
-                if (neirCount >= neirCountToDie)
-                    m_newState[i][j][k].alive = false;
+                if (!alive && neirCount >= neirCountToLife)
+                    old_buffer[i][j][k] = {true, color / neirCount};
             }
         }
     }
 
-#pragma omp parallel for collapse(3)
-    for (CellIndex i = 1; i < m_fieldSize + 1; ++i)
-        for (CellIndex j = 1; j < m_fieldSize + 1; ++j)
-            for (CellIndex k = 1; k < m_fieldSize + 1; ++k)
-                m_cells[i][j][k] = m_newState[i][j][k];
-
-//    m_pool.waitForFinish();
-
-//    m_cells = m_newState;
+    std::swap(m_cells[0], m_cells[1]);
 }
 
 void World::filter_entities()
@@ -290,7 +198,8 @@ void World::filter_entities()
         it = !it->second->isActivate() ? m_entities.erase(it) : ++it;
 }
 
-void World::init_field() {
+void World::init_field()
+{
     using utils::math::cantor_pairing;
 
     const std::vector<std::array<size_t, 3>> initial_cells = {
@@ -330,15 +239,16 @@ void World::init_field() {
             {14, 11, 5},
     };
 
-    GLfloat init_x = 0.f;
-    GLfloat init_y = 0.f;
-    GLfloat init_z = 0.f;
+    m_cells[0] = std::make_shared<FieldType>();
+    m_cells[1] = std::make_shared<FieldType>();
 
-    m_cells.resize(boost::extents[0][0][0]); // clear array if reinit
-    m_cells.resize(boost::extents[m_fieldSize + 2][m_fieldSize + 2][m_fieldSize + 2]);
+    m_cells[0]->resize(boost::extents[0][0][0]); // clear array if reinit
+    m_cells[0]->resize(boost::extents[m_fieldSize + 2][m_fieldSize + 2][m_fieldSize + 2]);
+    m_cells[1]->resize(boost::extents[0][0][0]); // clear array if reinit
+    m_cells[1]->resize(boost::extents[m_fieldSize + 2][m_fieldSize + 2][m_fieldSize + 2]);
 
     std::shared_ptr<Sprite> sprite_com = std::make_shared<Sprite>();
-    sprite_com->addTexture(getResourcePath("cube.obj"), cubeSize,
+    sprite_com->addTexture(getResourcePath("cube1.obj"), cubeSize,
                            cubeSize, cubeSize);
     sprite_com->generateDataBuffer();
     CellComponent::sprite = sprite_com;
@@ -347,34 +257,28 @@ void World::init_field() {
     for (CellIndex i = 1; i < m_fieldSize + 1; ++i) {
         for (CellIndex j = 1; j < m_fieldSize + 1; ++j) {
             for (CellIndex k = 1; k < m_fieldSize + 1; ++k) {
-                cellComp.pos.x = init_x + cubeSize * i;
-                cellComp.pos.y = init_y + cubeSize * j;
-                cellComp.pos.z = init_z + cubeSize * k;
-                cellComp.color =
-                        {rand.generateu<GLfloat>(0.f, 1.f),
-                         rand.generateu<GLfloat>(0.f, 1.f),
-                         rand.generateu<GLfloat>(0.f, 1.f)};
                 if (std::count(initial_cells.cbegin(),
                                initial_cells.cend(),
-                               std::array<size_t, 3>{(size_t) i, (size_t) j,
-                                                     (size_t) k}) != 0) {
+                               std::array<size_t, 3>{(size_t) (i - 1), (size_t) (j - 1),
+                                                     (size_t) (k - 1)}) != 0) {
                     cellComp.alive = true;
+                    cellComp.color =
+                            {rand.generateu<GLfloat>(0.f, 1.f),
+                             rand.generateu<GLfloat>(0.f, 1.f),
+                             rand.generateu<GLfloat>(0.f, 1.f)};
                 } else {
                     cellComp.alive = false;
+                    cellComp.color = {0.f, 0.f, 0.f};
                 }
 
-                m_cells[i][j][k] = cellComp;
+                (*m_cells[0])[i][j][k] = cellComp;
+                (*m_cells[1])[i][j][k] = cellComp;
             }
         }
     }
 
-    m_newState.resize(boost::extents[0][0][0]); // clear array if reinit
-    m_newState.resize(boost::extents[m_fieldSize + 2][m_fieldSize + 2][m_fieldSize + 2]);
-    m_newState = m_cells;
-
-    // TODO: fix bug
     auto camera = Camera::getInstance();
-    GLfloat pos = m_fieldSize * (cubeSize + 40);
+    GLfloat pos = m_fieldSize;
     camera->setPos({pos, pos, pos});
     camera->updateView();
     auto program = LifeProgram::getInstance();

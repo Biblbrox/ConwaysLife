@@ -1,4 +1,5 @@
 #version 330 core
+//#extension GL_ARB_conservative_depth : enable
 
 layout (std140) uniform Matrices
 {
@@ -9,10 +10,10 @@ layout (std140) uniform Matrices
 
 layout (location = 0) in vec3 position;
 
-out vec3 VerPos;
+//out vec3 VerPos;
 
 void main()
 {
-    VerPos = position;
+//    VerPos = position;
     gl_Position = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(position, 1.0);
 }

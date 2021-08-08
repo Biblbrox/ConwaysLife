@@ -10,6 +10,8 @@
 
 using glm::vec2;
 
+#define IDX_3D_FLAT(x, y, z, w, d) x + w * (y + d * z)
+
 namespace utils::math {
 
     constexpr unsigned int power_two(unsigned int val) noexcept

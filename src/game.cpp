@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
+//#include <SDL_image.h>
+//#include <SDL_ttf.h>
 #include <boost/format.hpp>
 
 #include "game.hpp"
@@ -40,15 +40,15 @@ void quit()
 {
     if (Game::getGLContext())
         SDL_GL_DeleteContext(Game::getGLContext());
-    if (TTF_WasInit())
-        TTF_Quit();
-    if (imgInit)
-        IMG_Quit();
+//    if (TTF_WasInit())
+//        TTF_Quit();
+//    if (imgInit)
+//        IMG_Quit();
     if (Game::getWindow())
         SDL_DestroyWindow(Game::getWindow());
 #ifdef INIT_SOUND
-    if (mixerInit)
-        Mix_Quit();
+//    if (mixerInit)
+//        Mix_Quit();
 #endif
 
     SDL_Quit();
@@ -88,18 +88,18 @@ void Game::initOnceSDL2()
     if (didInit)
         return;
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO) != 0)
         throw SdlException((format("SDL initialization error: %1%\n")
                             % SDL_GetError()).str(),
                            program_log_file_name(),
                            Category::INITIALIZATION_ERROR);
 
-    if ((IMG_Init(IMG_FLAGS) & IMG_FLAGS) != IMG_FLAGS)
-        throw SdlException((format("SDL_IMG initialization error: %1%\n")
-                            % IMG_GetError()).str(),
-                           program_log_file_name(),
-                           Category::INITIALIZATION_ERROR);
-
+//    if ((IMG_Init(IMG_FLAGS) & IMG_FLAGS) != IMG_FLAGS)
+//        throw SdlException((format("SDL_IMG initialization error: %1%\n")
+//                            % IMG_GetError()).str(),
+//                           program_log_file_name(),
+//                           Category::INITIALIZATION_ERROR);
+//
     imgInit = true;
 
 #ifdef INIT_SOUND
@@ -112,21 +112,29 @@ void Game::initOnceSDL2()
     mixerInit = true;
 #endif
 
-    if (TTF_Init() == -1)
-        throw SdlException((format("SDL_TTF initialization error: %1%\n")
-                            % TTF_GetError()).str(),
-                           program_log_file_name(),
-                           Category::INITIALIZATION_ERROR);
+//    if (TTF_Init() == -1)
+//        throw SdlException((format("SDL_TTF initialization error: %1%\n")
+//                            % TTF_GetError()).str(),
+//                           program_log_file_name(),
+//                           Category::INITIALIZATION_ERROR);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
                         SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
+
+
+    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_RELEASE_BEHAVIOR, 1);
+//    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+//    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+//    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+//    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 
     if (Config::getVal<bool>("MSAA")) {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -134,7 +142,7 @@ void Game::initOnceSDL2()
                             Config::getVal<int>("MSAASamples"));
     }
 
-    SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0");
+    SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "1");
 
     SDL_ShowCursor(SDL_ENABLE);
     if (SDL_ShowCursor(SDL_QUERY) != SDL_ENABLE)
@@ -201,25 +209,27 @@ void Game::initGL()
 //    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 //    glEnable(GL_BLEND);
 
+    glEnable(GL_CULL_FACE);
+
     if (Config::getVal<bool>("MSAA"))
         glEnable(GL_MULTISAMPLE);
 
-    glDisable(GL_DEPTH_CLAMP);
+//    glDisable(GL_DEPTH_CLAMP);
     glEnable(GL_DEPTH_TEST);
 //    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //Use Vsync
-    if(SDL_GL_SetSwapInterval(-1) < 0) {
-        Logger::write(program_log_file_name(),
-                      Category::INITIALIZATION_ERROR,
-                      (format("Warning: Unable to enable VSync. "
-                              "VSync will not be used! SDL Error: %s\n")
-                       % SDL_GetError()).str());
-        // If can't use vsync try set fixed fps
-        SDL_GL_SetSwapInterval(0);
-        vsync_supported = false;
-    } else {
-        vsync_supported = true;
-    }
+//    if(SDL_GL_SetSwapInterval(-1) < 0) {
+//        Logger::write(program_log_file_name(),
+//                      Category::INITIALIZATION_ERROR,
+//                      (format("Warning: Unable to enable VSync. "
+//                              "VSync will not be used! SDL Error: %s\n")
+//                       % SDL_GetError()).str());
+////         If can't use vsync try set fixed fps
+//        SDL_GL_SetSwapInterval(0);
+//        vsync_supported = false;
+//    } else {
+//        vsync_supported = true;
+//    }
 
     //Check for error
     error = glGetError();
@@ -232,7 +242,7 @@ void Game::initGL()
 
 void Game::flush()
 {
-    glFlush();
+//    glFlush();
     SDL_GL_SwapWindow(Game::m_window);
 }
 

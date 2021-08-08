@@ -18,6 +18,14 @@
 #include "config.hpp"
 #include "utils/math.hpp"
 
+#define CHECK_FRAMEBUFFER_COMPLETE() \
+if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) \
+throw GLException((boost::format( \
+        "Warning: Unable to generate frame buffer. " \
+        "GL Error: %s\n") % gluErrorString(glGetError())).str(), \
+        utils::log::program_log_file_name(), \
+        utils::log::Category::INITIALIZATION_ERROR); \
+
 using utils::log::Logger;
 using boost::format;
 using utils::log::program_log_file_name;
@@ -65,27 +73,17 @@ static GLuint genRbo(GLuint width, GLuint height, bool msaa = false,
     GLuint rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    if (msaa)
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples,
-                                         GL_DEPTH24_STENCIL8, width, height);
-    else
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa ? samples : 0,
+                                     GL_DEPTH_COMPONENT24, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     return rbo;
 }
 
-#define CHECK_FRAMEBUFFER_COMPLETE() \
-if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) \
-throw GLException((boost::format( \
-        "Warning: Unable to generate frame buffer. " \
-        "GL Error: %s\n") % gluErrorString(glGetError())).str(), \
-        utils::log::program_log_file_name(), \
-        utils::log::Category::INITIALIZATION_ERROR); \
-
 RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
                                    m_colorSettingsOpen(false),
-                                   m_isMsaa(Config::getVal<bool>("MSAA"))
+                                   m_isMsaa(Config::getVal<bool>("MSAA")),
+                                   m_coloredGame(Config::getVal<bool>("ColoredLife"))
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -109,7 +107,9 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
     int screen_height = utils::getWindowHeight<GLuint>(*Game::getWindow());
     m_aspectRatio = static_cast<GLfloat>(screen_width) / screen_height;
 
+
     m_fieldSize = Config::getVal<int>("FieldSize");
+
 
     if (m_isMsaa) {
         // Generate multisampled framebuffer
@@ -142,15 +142,27 @@ RendererSystem::RendererSystem() : m_frameBuffer(0), m_videoSettingsOpen(false),
         GLuint rbo = genRbo(screen_width, screen_height);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, m_frameBufTex, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                   GL_RENDERBUFFER, rbo);
     }
 
+
     CHECK_FRAMEBUFFER_COMPLETE();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    GLuint error = glGetError();
+    if (error != GL_NO_ERROR)
+        throw GLException((boost::format(
+                "Warning: Unable to generate instance buffer. "
+                "GL Error: %s\n") % gluErrorString(error)).str(),
+                          utils::log::program_log_file_name(),
+                          utils::log::Category::INITIALIZATION_ERROR);
+
 
     auto camera = Camera::getInstance();
-    GLfloat cubSize = 20.f;
-    int fieldSize = Config::getVal<int>("FieldSize") * (cubSize + 10);
+    GLfloat cubSize = 4.f;
+    int fieldSize = Config::getVal<int>("FieldSize") * (cubSize);
     camera->setPos({fieldSize, fieldSize, fieldSize});
     camera->updateView();
 }
@@ -162,49 +174,63 @@ RendererSystem::~RendererSystem()
 
 void RendererSystem::drawSprites()
 {
-    const auto& sprites = m_ecsManager->getEntities();
+    //const auto& sprites = m_ecsManager->getEntities();
     auto program = LifeProgram::getInstance();
-    const glm::vec4& borderColor = Config::getVal<glm::vec4>("CellBorderColor");
-    const glm::vec4& cellColor = Config::getVal<glm::vec4>("CellColor");
-    bool coloredGame = Config::getVal<bool>("ColoredLife");
+//    const glm::vec4& borderColor = Config::getVal<glm::vec4>("CellBorderColor");
 
-    if (!coloredGame)
+    if (!m_coloredGame) {
+        const glm::vec4& cellColor = Config::getVal<glm::vec4>("CellColor");
         program->setVec3("Color", cellColor);
+    }
 
-    program->setVec3("OutlineColor", borderColor);
+//    program->setVec3("OutlineColor", borderColor);
 
-    const auto& sprite = World::m_cells[0][0][0].sprite;
-    GLfloat cellSize = sprite->getWidth();
-    const glm::vec3 scale{cellSize, cellSize, cellSize};
-    mat4 scaling = glm::scale(mat4(1.f), scale);
-    program->leftMultModel(scaling);
+    const auto& sprite = (*World::m_cells[0])[0][0][0].sprite;
+//    GLfloat cellSize = sprite->getWidth();
+//    const glm::vec3 scale{cellSize, cellSize, cellSize};
+//    mat4& model = program->getModel();
+//    model[0][0] = model[1][1] = model[2][2] = cellSize;
+//    program->updateModel();
+//    mat4 scaling = glm::scale(mat4(1.f), scale);
+//    program->leftMultModel(scaling);
 
-//    glBindTexture(GL_TEXTURE_2D, sprite->getTextureID());
+    GLfloat init_x = 0.f;
+    GLfloat init_y = 0.f;
+    GLfloat init_z = 0.f;
+    const GLfloat cubeSize = 2.f;
+
     glBindVertexArray(sprite->getVAO());
-    const auto& cells = World::m_cells;
+    const auto& cells = (*World::m_cells[0]);
     for (CellIndex i = 1; i < m_fieldSize + 1; ++i) {
         for (CellIndex j = 1; j < m_fieldSize + 1; ++j) {
             for (CellIndex k = 1; k < m_fieldSize + 1; ++k) {
                 if (!cells[i][j][k].alive)
                     continue;
 
-                if (coloredGame)
+                if (m_coloredGame)
                     program->setVec3("Color", cells[i][j][k].color);
 
-                render::drawTexture(*program, *sprite, cells[i][j][k].pos);
+                render::drawTexture(*program, *sprite, {
+                        init_x + cubeSize * (i - 1),
+                        init_y + cubeSize * (j - 1),
+                        init_z + cubeSize * (k - 1)
+                });
             }
         }
     }
-//    glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 
-    scaling = glm::scale(mat4(1.f), 1 / scale);
-    program->leftMultModel(scaling);
+//    model[0][0] = model[1][1] = model[2][2] = 1 / cellSize;
+//    program->updateModel();
+//    scaling = glm::scale(mat4(1.f), 1 / scale);
+//    program->leftMultModel(scaling);
 
+#ifndef NDEBUG
     if (GLenum error = glGetError(); error != GL_NO_ERROR)
         throw GLException((format("\n\tRender while drawing sprites: %1%\n")
                            % glewGetErrorString(error)).str(),
                           program_log_file_name(), Category::INTERNAL_ERROR);
+#endif
 }
 
 void RendererSystem::update_state(size_t delta)
@@ -218,14 +244,14 @@ void RendererSystem::drawToFramebuffer()
     auto program = LifeProgram::getInstance();
     program->useFramebufferProgram();
 
-    int screen_width = utils::getDisplayWidth<int>();
-    int screen_height = utils::getDisplayHeight<int>();
+//    int screen_width = utils::getDisplayWidth<int>();
+//    int screen_height = utils::getDisplayHeight<int>();
 
-    auto camera = Camera::getInstance();
-    glViewport(0.f, 0.f, screen_width, screen_height);
-    program->setProjection(camera->getProjection(screen_width,
-                                                 screen_height));
-    program->updateProjection();
+//    auto camera = Camera::getInstance();
+//    glViewport(0.f, 0.f, screen_width, screen_height);
+//    program->setProjection(camera->getProjection(screen_width,
+//                                                 screen_height));
+//    program->updateProjection();
 
     // Render to texture
     if (m_isMsaa)
@@ -235,8 +261,8 @@ void RendererSystem::drawToFramebuffer()
 
     glm::vec4 color = Config::getVal<glm::vec4>("BackgroundColor");
     glClearColor(color.x, color.y, color.z, color.w);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     drawSprites();
 }

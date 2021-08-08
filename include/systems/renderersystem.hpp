@@ -4,14 +4,13 @@
 #include <GL/glew.h>
 
 #include "render/camera.hpp"
-#include "components/textcomponent.hpp"
 #include "ecs/system.hpp"
 #include "components/positioncomponent.hpp"
 
 /**
  * System that can handle level surface
  */
-class RendererSystem : public ecs::System<PositionComponent, TextComponent>
+class RendererSystem : public ecs::System<PositionComponent>
 {
 public:
     explicit RendererSystem();
@@ -28,6 +27,8 @@ private:
     GLuint m_frameBufTex;
     GLuint m_frameBufTexMSAA;
 
+    GLuint m_instanceVBO;
+
     GLfloat m_aspectRatio;
 
     bool m_videoSettingsOpen;
@@ -35,6 +36,7 @@ private:
     size_t m_fieldSize;
 
     bool m_isMsaa;
+    bool m_coloredGame;
 
     void drawGui();
 };
